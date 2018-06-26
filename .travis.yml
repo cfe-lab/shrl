@@ -1,0 +1,14 @@
+language: python
+python:
+  - "3.6"
+cache: pip
+install:
+  - pip install git+https://github.com/hcv-shared/shared-schema@master#egg=shared_schema
+  - pip install -e ".[tests]"
+script:
+  - python setup.py test
+  - flake8 shrl test
+  - mypy shrl
+notifications:
+  email:
+    on_failure: change
