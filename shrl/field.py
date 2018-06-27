@@ -22,8 +22,11 @@ class FieldParsingError(shrl.exceptions.BaseParsingException):
 
 T = ty.TypeVar("T")
 
+FieldType = ty.Union[str, bool, int, float, enum.Enum, datetime.date]
+ParsedField = ty.Optional[FieldType]
 
-class BaseField(ty.Generic[T]):
+
+class BaseField():
     "Abstract base class for field parsers"
 
     def __init__(self, name: str, required: bool = False) -> None:
@@ -33,7 +36,7 @@ class BaseField(ty.Generic[T]):
     def handle_none(
             self,
             loc: shrl.exceptions.SourceLocation,
-    ) -> ty.Optional[T]:
+    ) -> ParsedField:
         "What to do with an empty field"
         if not self.required:
             return None
@@ -45,7 +48,7 @@ class BaseField(ty.Generic[T]):
             self,
             src: ty.Optional[str],
             loc: shrl.exceptions.SourceLocation,
-    ) -> ty.Optional[T]:
+    ) -> ParsedField:
         if src is None:
             return self.handle_none(loc)
         try:
@@ -61,7 +64,7 @@ class BaseField(ty.Generic[T]):
             self,
             src: str,
             loc: shrl.exceptions.SourceLocation,
-    ) -> ty.Optional[T]:
+    ) -> ParsedField:
         "Implemented by concrete field parsers that handle specific types"
         raise NotImplementedError()
 
@@ -79,7 +82,7 @@ class BaseField(ty.Generic[T]):
             ])
 
 
-class BoolField(BaseField[bool]):
+class BoolField(BaseField):
 
     trues = frozenset(['1', 'true', 'y', 't', 'yes'])
     falses = frozenset(['0', 'false', 'n', 'f', 'no'])
@@ -106,7 +109,7 @@ class BoolField(BaseField[bool]):
             raise FieldParsingError(loc, msg.format(self.name, e))
 
 
-class DateField(BaseField[datetime.date]):
+class DateField(BaseField):
     def parse_type(
             self,
             src: str,
@@ -126,7 +129,7 @@ class DateField(BaseField[datetime.date]):
             raise FieldParsingError(loc, msg.format(e))
 
 
-class NumberField(BaseField[ty.Union[int, float]]):
+class NumberField(BaseField):
     def parse_type(
             self,
             src: str,
@@ -147,7 +150,7 @@ class NumberField(BaseField[ty.Union[int, float]]):
         )
 
 
-class StringField(BaseField[str]):
+class StringField(BaseField):
     def handle_blank(
             self,
             loc: shrl.exceptions.SourceLocation,
@@ -173,7 +176,7 @@ class StringField(BaseField[str]):
             raise FieldParsingError(loc, msg.format(self.name, e))
 
 
-class EnumField(BaseField[enum.Enum]):
+class EnumField(BaseField):
 
     target: enum.Enum
 
