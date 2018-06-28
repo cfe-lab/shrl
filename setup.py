@@ -1,5 +1,4 @@
 import setuptools
-
 import shrl
 
 tests_require = [
@@ -28,7 +27,7 @@ setuptools.setup(
     description=('The SHARED Quality, Uniformity, and Sanity Helper'),
     license='Apache2',
     url="https://github.com/hcv-shared/shrl",
-    python_requires=">3,<3.7",
+    python_requires=">=3.6,<4",
     test_suite='test',
     install_requires=install_requires,
     extras_require={
