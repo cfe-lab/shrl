@@ -24,7 +24,7 @@ class CsvSource(ty.NamedTuple):
     reader: csv.DictReader
 
     @classmethod
-    def from_rows(
+    def from_file(
             cls,
             raw_rows: ty.Iterator[str],
             filename: str,
@@ -34,7 +34,7 @@ class CsvSource(ty.NamedTuple):
         return cls(filename=filename, reader=reader)
 
     @classmethod
-    def from_file(
+    def from_filepath(
             cls,
             filepath: ty.Union[str, pathlib.Path],
     ) -> 'CsvSource':
@@ -44,4 +44,4 @@ class CsvSource(ty.NamedTuple):
             raise ValueError(msg)
         infile = open(filepath)
         filename = filepath.name
-        return cls.from_rows(raw_rows=infile, filename=filename)
+        return cls.from_file(raw_rows=infile, filename=filename)

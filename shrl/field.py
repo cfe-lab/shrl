@@ -200,14 +200,14 @@ class EnumField(BaseField):
             loc: shrl.exceptions.SourceLocation,
     ) -> enum.Enum:
         # NOTE(nknight): typing doesn't support iterating enums yet.
-        opts = ", ".join([e.name for e in self.target])  # type: ignore
         try:
             normed_src = src.lower().strip()
-            # NOTE(nknighTt): typing doesn't support indexing enums yet
+            # NOTE(nknight): typing doesn't support indexing enums yet
             return self.target[normed_src]  # type: ignore
         except KeyError:
+            opts = ", ".join([e.name for e in self.target])  # type: ignore
             msg = f"Unexpected value {src} for enum {self.name} ({opts})"
-            raise FieldParsingError(loc, "Unexpected value '{")
+            raise FieldParsingError(loc, f"Unexpected value '{src}")
         except Exception as e:
             tmpl = "Unexpected exception trying to parse '{}' as {}"
             msg = tmpl.format(src, self.name)
