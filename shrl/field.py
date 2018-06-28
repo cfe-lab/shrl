@@ -26,7 +26,7 @@ FieldType = ty.Union[str, bool, int, float, enum.Enum, datetime.date]
 ParsedField = ty.Optional[FieldType]
 
 
-class BaseField():
+class BaseField:
     "Abstract base class for field parsers"
 
     def __init__(self, name: str, required: bool = False) -> None:
