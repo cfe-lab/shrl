@@ -23,7 +23,7 @@ fake_location = shrl.exceptions.SourceLocation(
 )
 
 
-class TestTableSpec(unittest.TestCase):
+class TestRowSpec(unittest.TestCase):
     def test_parse_success(self):
         source = {'id': '3', 'flag': 'true', 'notes': ''}
         parsed = example_rowspec.parse(source, fake_location)
