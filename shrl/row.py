@@ -15,6 +15,10 @@ ParsedRow = ty.Dict[str, shrl.field.ParsedField]
 RuleFunction = ty.Callable[[ParsedRow, shrl.exceptions.SourceLocation], None]
 
 
+class InvalidColumns(shrl.exceptions.BaseParsingException):
+    pass
+
+
 class RowSpec:
     "Specifies the fields in a row, and any row-level validation rules"
 
@@ -30,19 +34,24 @@ class RowSpec:
         self.fields = fields
         self._fields_index = {fld.name: fld for fld in fields}
         self.rules = rules
+        self._field_set = set(f.name for f in fields)
 
     def parse(
             self,
-            src_dict: CsvRow,
+            src: CsvRow,
             loc: shrl.exceptions.SourceLocation,
     ) -> ParsedRow:
         "Given a dict of column name to source string, parse it into a row"
 
         result = {}
+        if not set(src.keys()).issubset(self._field_set):
+            extra_cols = set(src.keys()) - self._field_set
+            msg = "Unexpected columns: {}".format(", ".join(extra_cols))
+            raise InvalidColumns(loc, msg)
         for fld in self.fields:
             colname = fld.name
-            src = src_dict.get(colname)
-            parsed = fld.parse(src, loc)
+            fld_src = src.get(colname)
+            parsed = fld.parse(fld_src, loc)
             result[colname] = parsed
         for fn in self.rules:
             fn(result, loc)
