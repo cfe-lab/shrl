@@ -106,7 +106,7 @@ submission_spec = RowSpec(
     fields=[_schema_field_as_field(f) for f in scheme.fields], )
 
 
-def parse_rows(source: shrl.io.CsvSource) -> ty.Iterable[LoadedRow]:
+def load_rows(source: shrl.io.CsvSource) -> ty.Iterable[LoadedRow]:
     for idx, row in enumerate(source.reader):
         location = shrl.exceptions.SourceLocation(
             filename=str(source.filename),

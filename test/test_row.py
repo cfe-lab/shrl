@@ -79,6 +79,6 @@ class TestParseRows(unittest.TestCase):
     def test_parsing_source_rows(self):
         source = io.StringIO(raw_source)
         open_source = shrl.io.CsvSource.from_file(source, filename="fake.csv")
-        parsed = list(row.parse_rows(open_source))
+        parsed = list(row.load_rows(open_source))
         self.assertEqual(len(parsed), 8)
         self.assertTrue(all(type(r) is dict for r in parsed))
