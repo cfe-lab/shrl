@@ -23,7 +23,15 @@ class FieldParsingError(shrl.exceptions.BaseParsingException):
 T = ty.TypeVar("T")
 
 FieldType = ty.Union[str, bool, int, float, enum.Enum, datetime.date]
-ParsedField = ty.Optional[FieldType]
+
+
+class LoadedField(ty.NamedTuple):
+    src: str
+    fld: 'BaseField'
+    loc: shrl.exceptions.SourceLocation
+
+    def _parse(self) -> ty.Optional[FieldType]:
+        return self.fld.parse(self.src, self.loc)
 
 
 class BaseField:
@@ -36,7 +44,7 @@ class BaseField:
     def handle_none(
             self,
             loc: shrl.exceptions.SourceLocation,
-    ) -> ParsedField:
+    ) -> ty.Optional[FieldType]:
         "What to do with an empty field"
         if not self.required:
             return None
@@ -48,7 +56,7 @@ class BaseField:
             self,
             src: ty.Optional[str],
             loc: shrl.exceptions.SourceLocation,
-    ) -> ParsedField:
+    ) -> ty.Optional[FieldType]:
         if src is None:
             return self.handle_none(loc)
         try:
@@ -60,11 +68,22 @@ class BaseField:
             else:
                 raise err
 
+    def load(
+            self,
+            src: str,
+            loc: shrl.exceptions.SourceLocation,
+    ) -> LoadedField:
+        return LoadedField(
+            src=src,
+            fld=self,
+            loc=loc,
+        )
+
     def parse_type(
             self,
             src: str,
             loc: shrl.exceptions.SourceLocation,
-    ) -> ParsedField:
+    ) -> ty.Optional[FieldType]:
         "Implemented by concrete field parsers that handle specific types"
         raise NotImplementedError()
 

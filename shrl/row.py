@@ -9,10 +9,9 @@ import shrl.exceptions
 import shrl.field
 import shrl.io
 
-CsvRow = ty.Dict[str, str]
-ParsedRow = ty.Dict[str, shrl.field.ParsedField]
+LoadedRow = ty.Dict[str, shrl.field.LoadedField]
 # A RuleFunction will raise an exception if the row is somehow invalid.
-RuleFunction = ty.Callable[[ParsedRow, shrl.exceptions.SourceLocation], None]
+RuleFunction = ty.Callable[[LoadedRow, shrl.exceptions.SourceLocation], None]
 
 
 class InvalidColumns(shrl.exceptions.BaseParsingException):
@@ -23,24 +22,21 @@ class RowSpec:
     "Specifies the fields in a row, and any row-level validation rules"
 
     fields: ty.List[shrl.field.BaseField]
-    rules: ty.List[RuleFunction]
 
     def __init__(
             self,
             fields: ty.List[shrl.field.BaseField],
-            rules: ty.List[RuleFunction],
     ) -> None:
         assert len(set(fld.name for fld in fields)) == len(fields)
         self.fields = fields
         self._fields_index = {fld.name: fld for fld in fields}
-        self.rules = rules
         self._field_set = set(f.name for f in fields)
 
-    def parse(
+    def load(
             self,
-            src: CsvRow,
+            src: shrl.io.CsvRow,
             loc: shrl.exceptions.SourceLocation,
-    ) -> ParsedRow:
+    ) -> LoadedRow:
         "Given a dict of column name to source string, parse it into a row"
 
         result = {}
@@ -50,11 +46,9 @@ class RowSpec:
             raise InvalidColumns(loc, msg)
         for fld in self.fields:
             colname = fld.name
-            fld_src = src.get(colname)
-            parsed = fld.parse(fld_src, loc)
-            result[colname] = parsed
-        for fn in self.rules:
-            fn(result, loc)
+            fld_src = src.get(colname, "")
+            loaded = fld.load(fld_src, loc)
+            result[colname] = loaded
         return result
 
 
@@ -109,15 +103,13 @@ def _schema_field_as_field(scm_field: scheme.Field) -> shrl.field.BaseField:
 
 
 submission_spec = RowSpec(
-    fields=[_schema_field_as_field(f) for f in scheme.fields],
-    rules=[],
-)
+    fields=[_schema_field_as_field(f) for f in scheme.fields], )
 
 
-def parse_rows(source: shrl.io.CsvSource) -> ty.Iterable[ParsedRow]:
+def parse_rows(source: shrl.io.CsvSource) -> ty.Iterable[LoadedRow]:
     for idx, row in enumerate(source.reader):
         location = shrl.exceptions.SourceLocation(
             filename=str(source.filename),
             line=idx + 2,  # +1 for 0 indexing, +1 for headers
         )
-        yield submission_spec.parse(row, location)
+        yield submission_spec.load(row, location)

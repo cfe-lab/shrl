@@ -19,6 +19,9 @@ def _downcase_csv_headers(rows: ty.Iterator[str]) -> ty.Iterator[str]:
     return itertools.chain([first.lower()], rows)
 
 
+CsvRow = ty.Dict[str, str]
+
+
 class CsvSource(ty.NamedTuple):
     filename: ty.Union[str, pathlib.Path]
     reader: csv.DictReader
