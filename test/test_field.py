@@ -188,3 +188,29 @@ class TestForeignKeyField(unittest.TestCase):
             target='b_target',
         )
         self.assertNotEqual(fld1, fld2)
+
+
+class TestLoadedField(unittest.TestCase):
+    def test_parse(self):
+        fld = shrl.field.LoadedField(
+            src="1.0",
+            fld=shrl.field.NumberField("test_field", required=True),
+            loc=fake_loc,
+        )
+        self.assertEqual(fld._parse(), 1.0)
+
+    def test_parse_invalid(self):
+        fld = shrl.field.LoadedField(
+            src="Kangaroo",
+            fld=shrl.field.NumberField("test_field", required=True),
+            loc=fake_loc,
+        )
+        self.assertRaises(shrl.field.FieldParsingError, fld._parse)
+
+    def test_parse_or(self):
+        fld = shrl.field.LoadedField(
+            src="Kangaroo",
+            fld=shrl.field.NumberField("test_field", required=True),
+            loc=fake_loc,
+        )
+        self.assertEqual(fld._parse_or(0.0), 0.0)

@@ -33,6 +33,15 @@ class LoadedField(ty.NamedTuple):
     def _parse(self) -> ty.Optional[FieldType]:
         return self.fld.parse(self.src, self.loc)
 
+    def _parse_or(
+            self,
+            default: ty.Optional[FieldType],
+    ) -> ty.Optional[FieldType]:
+        try:
+            return self._parse()
+        except FieldParsingError:
+            return default
+
 
 class BaseField:
     "Abstract base class for field parsers"
