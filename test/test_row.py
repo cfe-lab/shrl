@@ -75,10 +75,15 @@ raw_source = '''ID,COUNTRY,SEX,YEAR_OF_BIRTH,LTFU,LTFU_YEAR,DIED,COD,SEX_ORI,IDU
 5,,,,,,,,,,,,,,,,,,,,,,,,8phxbqku,FW24,NS5B,1,a,5,,,"SOVALDI , PEGASYS",,'''  # noqa
 
 
-class TestParseRows(unittest.TestCase):
-    def test_parsing_source_rows(self):
-        source = io.StringIO(raw_source)
-        open_source = shrl.io.CsvSource.from_file(source, filename="fake.csv")
-        parsed = list(row.load_rows(open_source))
-        self.assertEqual(len(parsed), 8)
-        self.assertTrue(all(type(r) is dict for r in parsed))
+def fake_source():
+    source = io.StringIO(raw_source)
+    source_file = shrl.io.CsvSource.from_file(source, filename="fake.csv")
+    return source_file
+
+
+class TestLoadRows(unittest.TestCase):
+    def test_loading_source_rows(self):
+        source_data = fake_source()
+        loaded = list(row.load_rows(source_data))
+        self.assertEqual(len(loaded), 8)
+        self.assertTrue(all(type(r) is dict for r in loaded))
