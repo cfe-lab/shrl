@@ -1,8 +1,10 @@
 import setuptools
+
 import shrl
 
 tests_require = [
     "flake8 >=3.4.1, <4.0",
+    "hypothesis >=3.66.0, <4.0.0",
     "mypy >= 0.610",
 ]
 
