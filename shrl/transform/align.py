@@ -2,6 +2,7 @@ import typing as ty
 
 
 def profile_name(gt: str, subgt: ty.Optional[str]) -> str:
+    "Choose a nucamino alignment profile based on genotype and subgenotype"
     GENOTYPES = {"1", "2", "3", "4", "5", "6"}
     if gt not in GENOTYPES:
         raise ValueError(f"Invalid Genotype: {gt}")
