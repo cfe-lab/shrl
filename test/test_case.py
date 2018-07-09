@@ -156,3 +156,7 @@ class TestCaseRows(unittest.TestCase):
         example_case = cases[0]
         self.assertEqual(len(example_case.clinical), 1)
         self.assertEqual(len(example_case.clinical[0].sequences), 2)
+        clinical_lists = [case.clinical for case in cases]
+        clinicals = [c for cl in clinical_lists for c in cl]
+        seq_counts = [len(c.sequences) for c in clinicals]
+        self.assertEqual(len(parsed), sum(seq_counts))
