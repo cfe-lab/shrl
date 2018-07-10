@@ -17,3 +17,11 @@ def profile_name(gt: str, subgt: ty.Optional[str]) -> str:
             return "hcv1a"
     else:
         return f"hcv{gt}"
+
+
+def ensure_fasta_formatted(seq_str: str, hdr: str = "Reformatted") -> str:
+    TMPL = "> {hdr}\n{seq}"
+    if not seq_str.startswith(">"):
+        return TMPL.format(hdr=hdr, seq=seq_str)
+    else:
+        return seq_str
