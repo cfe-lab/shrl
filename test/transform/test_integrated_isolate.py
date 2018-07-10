@@ -6,7 +6,7 @@ from . import test_integrated_align
 
 
 class TestSimpleIsolateIntegrated(unittest.TestCase):
-    def is_namedtuple_with_attrs(self, item, attrs):
+    def assert_namedtuple_with_attrs(self, item, attrs):
         self.assertIsInstance(item, tuple)
         self.assertGreater(
             len(item.__class__.__mro__),
@@ -53,15 +53,15 @@ class TestSimpleIsolateIntegrated(unittest.TestCase):
                 len(entities[key]),
                 1,
             )
-        self.is_namedtuple_with_attrs(
+        self.assert_namedtuple_with_attrs(
             entities["Isolate"][0],
             ("id", "type"),
         )
-        self.is_namedtuple_with_attrs(
+        self.assert_namedtuple_with_attrs(
             entities["ClinicalIsolate"][0],
             ("isolate_id", "person_id", "sample_kind"),
         )
-        self.is_namedtuple_with_attrs(entities["Sequence"][0], (
+        self.assert_namedtuple_with_attrs(entities["Sequence"][0], (
             "id",
             "isolate_id",
             "genotype",
