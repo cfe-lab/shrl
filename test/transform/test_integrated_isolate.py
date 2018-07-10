@@ -2,7 +2,7 @@ import unittest
 
 from shrl.transform import isolate
 
-from . import test_align_integrated
+from . import test_integrated_align
 
 
 class TestSimpleIsolateIntegrated(unittest.TestCase):
@@ -16,7 +16,7 @@ class TestSimpleIsolateIntegrated(unittest.TestCase):
         for attr in attrs:
             self.assertTrue(
                 hasattr(item, attr),
-                "Missing expected attribute: {attr}".format(attr),
+                "Missing expected attribute: {attr}".format(attr=attr),
             )
 
     def test_integrated(self):
@@ -31,10 +31,10 @@ class TestSimpleIsolateIntegrated(unittest.TestCase):
             "notes": None,
         }
         entities = isolate.make_entities(
-            genotype="1a",
+            genotype="1",
             subgenotype="a",
             genes=["NS5A"],
-            raw_nt_seq=test_align_integrated.RAW_SEQUENCE,
+            raw_nt_seq=test_integrated_align.RAW_SEQUENCE,
             sequence_params=sequence_params,
             clinical_isolate_params=clinical_isolate_params,
         )
