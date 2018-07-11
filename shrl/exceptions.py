@@ -11,7 +11,8 @@ class SourceLocation(ty.NamedTuple):
 
 
 class ShrlException(Exception):
-    '''Root exception for anything specific to parsing and validating data'''
+    """Root exception for anything specific to parsing and validating data"""
+
     pass
 
 

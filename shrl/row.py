@@ -23,19 +23,14 @@ class RowSpec:
 
     fields: ty.List[shrl.field.BaseField]
 
-    def __init__(
-            self,
-            fields: ty.List[shrl.field.BaseField],
-    ) -> None:
+    def __init__(self, fields: ty.List[shrl.field.BaseField]) -> None:
         assert len(set(fld.name for fld in fields)) == len(fields)
         self.fields = fields
         self._fields_index = {fld.name: fld for fld in fields}
         self._field_set = set(f.name for f in fields)
 
     def load(
-            self,
-            src: shrl.io.CsvRow,
-            loc: shrl.exceptions.SourceLocation,
+        self, src: shrl.io.CsvRow, loc: shrl.exceptions.SourceLocation
     ) -> LoadedRow:
         "Given a dict of column name to source string, parse it into a row"
 
@@ -72,10 +67,10 @@ class SchemaDefinitionError(shrl.exceptions.ShrlException):
 
 
 def _schema_field_as_field(scm_field: scheme.Field) -> shrl.field.BaseField:
-    '''Convert submission scheme fields to shrl fields.
+    """Convert submission scheme fields to shrl fields.
 
      This function constructs a  a shrl.field.Field from a
-     shared_schema.submission_scheme.field.Field'''
+     shared_schema.submission_scheme.field.Field"""
     scm_type = scm_field.type
 
     shrl_type = _SIMPLE_TYPE_MAP.get(scm_type)
@@ -92,18 +87,18 @@ def _schema_field_as_field(scm_field: scheme.Field) -> shrl.field.BaseField:
             )
         if shrl_type is shrl.field.ForeignKeyField:
             target = shared_schema.util.foreign_key_target(
-                scm_field.schema_type)
+                scm_field.schema_type
+            )
             return shrl.field.ForeignKeyField(
-                name=scm_field.name,
-                required=scm_field.required,
-                target=target,
+                name=scm_field.name, required=scm_field.required, target=target
             )
     # If we haven't returned by now, we don't know how to parse this type.
     raise SchemaDefinitionError(f"Can't convert schema field: {scm_field}")
 
 
 submission_spec = RowSpec(
-    fields=[_schema_field_as_field(f) for f in scheme.fields], )
+    fields=[_schema_field_as_field(f) for f in scheme.fields]
+)
 
 
 def load_rows(source: shrl.io.CsvSource) -> ty.Iterable[LoadedRow]:

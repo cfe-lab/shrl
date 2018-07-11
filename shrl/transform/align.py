@@ -33,10 +33,7 @@ def ensure_fasta_formatted(seq_str: str, hdr: str = "Reformatted") -> str:
 
 
 def alignment(
-        sequence: entities.Sequence,
-        gene: str,
-        aln_report: ty.Any,
-        notes: str = '',
+    sequence: entities.Sequence, gene: str, aln_report: ty.Any, notes: str = ""
 ) -> entities.Alignment:
     nt_start = aln_report["FirstNA"]
     nt_end = aln_report["LastAA"]
@@ -51,8 +48,8 @@ def alignment(
 
 
 def substitution(
-        alignment: entities.Alignment,
-        mtn: ty.Any,  # One mutation object from the Nucamino alignment report
+    alignment: entities.Alignment,
+    mtn: ty.Any,  # One mutation object from the Nucamino alignment report
 ) -> entities.Substitution:
     specific_fields: ty.Dict[str, ty.Any] = {
         "sub_aa": None,
@@ -77,8 +74,7 @@ def substitution(
 
 
 def substitutions(
-        alignment: entities.Alignment,
-        alignment_report: ty.Any,
+    alignment: entities.Alignment, alignment_report: ty.Any
 ) -> ty.List[entities.Substitution]:
     assert len(alignment_report["FrameShifts"]) == 0
     subs: ty.List[entities.Substitution] = []
@@ -91,32 +87,21 @@ AlignmentEntities = ty.Dict[str, ty.List[ty.NamedTuple]]
 
 
 def make_entities(
-        sequence: entities.Sequence,
-        genotype: str,
-        subgenotype: str,
-        genes: ty.List[str],
+    sequence: entities.Sequence,
+    genotype: str,
+    subgenotype: str,
+    genes: ty.List[str],
 ) -> AlignmentEntities:
     "Construct Alignment and Substitution entities from a sequence."
     pname = profile_name(genotype, subgenotype)
-    nt_seq = ensure_fasta_formatted(
-        sequence.raw_nt_seq,
-        "Aligned Sequence",
-    )
-    aln_data: ty.Any = pn.align(
-        nt_seq,
-        pname,
-        genes,
-    )
+    nt_seq = ensure_fasta_formatted(sequence.raw_nt_seq, "Aligned Sequence")
+    aln_data: ty.Any = pn.align(nt_seq, pname, genes)
     aln_entities: AlignmentEntities = {"Alignment": [], "Substitution": []}
     for gene in genes:
         reports: ty.Any = aln_data[gene]
         assert len(reports) == 1
         report = reports[0]["Report"]
-        aln = alignment(
-            sequence,
-            gene,
-            report,
-        )
+        aln = alignment(sequence, gene, report)
         subs = substitutions(aln, report)
         aln_entities["Alignment"].append(aln)
         for sub in subs:

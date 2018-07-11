@@ -1,7 +1,7 @@
-'''Functions for grouping and parsing sequences of raw CSV records into
+"""Functions for grouping and parsing sequences of raw CSV records into
 participant cases (which include participant info, clinical tests, treatment
 history, and one or more sequences).
-'''
+"""
 import typing as ty
 
 import shrl.exceptions
@@ -41,8 +41,7 @@ T = ty.TypeVar("T")
 
 
 def split_rows(
-        pred: ty.Callable[[shrl.row.LoadedRow], bool],
-        rows: LoadedRows,
+    pred: ty.Callable[[shrl.row.LoadedRow], bool], rows: LoadedRows
 ) -> ty.Tuple[LoadedRows, LoadedRows]:
     if len(rows) == 0:
         return ([], [])
@@ -82,8 +81,7 @@ def group_rows(key_field: str, rows: LoadedRows) -> ty.List[LoadedRows]:
 
 
 def get_named_fields(
-        field_names: ty.Iterable[str],
-        source: shrl.row.LoadedRow,
+    field_names: ty.Iterable[str], source: shrl.row.LoadedRow
 ) -> ParsedRow:
     result: ParsedRow = {}
     for field_name in field_names:
@@ -97,8 +95,17 @@ def get_named_fields(
 
 
 def parse_participant(row: shrl.row.LoadedRow) -> Values:
-    fields = ('id', 'country', 'sex', 'ethnicity', 'year_of_birth', 'ltfu',
-              'ltfu_year', 'died', 'cod')
+    fields = (
+        "id",
+        "country",
+        "sex",
+        "ethnicity",
+        "year_of_birth",
+        "ltfu",
+        "ltfu_year",
+        "died",
+        "cod",
+    )
     values = {}
     values["id"] = row["id"]._parse()
     values.update(get_named_fields(fields, row))
@@ -106,23 +113,66 @@ def parse_participant(row: shrl.row.LoadedRow) -> Values:
 
 
 def parse_behavior(row: shrl.row.LoadedRow) -> Values:
-    fields = ('sex_ori', 'idu', 'idu_recent', 'ndu', 'ndu_recent', 'prison')
+    fields = ("sex_ori", "idu", "idu_recent", "ndu", "ndu_recent", "prison")
     return get_named_fields(fields, row)
 
 
 def parse_clinical(row: shrl.row.LoadedRow) -> Values:
-    fields = ('kind', 'hiv', 'hbv', 'ost', 'cirr', 'fibrosis', 'inflamation',
-              'metavir_by', 'stiff', 'alt', 'ast', 'crt', 'egfr', 'ctp',
-              'meld', 'ishak', 'bil', 'hemo', 'alb', 'inr', 'phos', 'urea',
-              'plate', 'CD4', 'crp', 'il28b', 'asc', 'var_bleed', 'hep_car',
-              'transpl', 'vl', 'first_treatment', 'duration_act', 'regimen',
-              'prev_regimen', 'pprev_regimen', 'response', 'treatment_notes')
+    fields = (
+        "kind",
+        "hiv",
+        "hbv",
+        "ost",
+        "cirr",
+        "fibrosis",
+        "inflamation",
+        "metavir_by",
+        "stiff",
+        "alt",
+        "ast",
+        "crt",
+        "egfr",
+        "ctp",
+        "meld",
+        "ishak",
+        "bil",
+        "hemo",
+        "alb",
+        "inr",
+        "phos",
+        "urea",
+        "plate",
+        "CD4",
+        "crp",
+        "il28b",
+        "asc",
+        "var_bleed",
+        "hep_car",
+        "transpl",
+        "vl",
+        "first_treatment",
+        "duration_act",
+        "regimen",
+        "prev_regimen",
+        "pprev_regimen",
+        "response",
+        "treatment_notes",
+    )
     return get_named_fields(fields, row)
 
 
 def parse_sequence(row: shrl.row.LoadedRow) -> Values:
-    fields = ('seq_kind', 'genotype', 'subgenotype', 'strain', 'seq_id',
-              'gene', 'seq_method', 'cutoff', 'seq_notes')
+    fields = (
+        "seq_kind",
+        "genotype",
+        "subgenotype",
+        "strain",
+        "seq_id",
+        "gene",
+        "seq_method",
+        "cutoff",
+        "seq_notes",
+    )
     return get_named_fields(fields, row)
 
 
@@ -158,14 +208,14 @@ def parse_case(case_rows: LoadedRows) -> Case:
 
 def case_rows(rows: LoadedRows) -> ty.Tuple[LoadedRows, LoadedRows]:
     "Pop one case's worth of rows from a list of loaded rows."
-    case_id = rows[0]['id']._parse()
+    case_id = rows[0]["id"]._parse()
     if case_id is None:
         location = next(f.loc for f in rows[0].values())
         raise ParsingError(location=location, msg="Missing Case ID")
 
     def matches_case(row: shrl.row.LoadedRow) -> bool:
         try:
-            row_id = row['id']._parse()
+            row_id = row["id"]._parse()
         except shrl.exceptions.BaseParsingException:
             row_id = None
         return row_id == case_id or row_id is None
@@ -194,8 +244,7 @@ def cases(rows: LoadedRows) -> ty.Iterable[Case]:
             if len(rows) > 0:
                 location = next(fld.loc for fld in rows[0].values())
                 raise ParsingError(
-                    location=location,
-                    msg="Leftover rows while parsing cases",
+                    location=location, msg="Leftover rows while parsing cases"
                 )
             return
         else:

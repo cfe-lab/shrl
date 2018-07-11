@@ -1,9 +1,9 @@
-'''Parse and validate individual fields from a CSV file
+"""Parse and validate individual fields from a CSV file
 
 This module contains an abstract base class which holds common behavior for
 defining fields and a concrete class for each type of value that we parse
 (strings, enums, numbers, etc.).
-'''
+"""
 
 import datetime
 import enum
@@ -27,15 +27,14 @@ FieldType = ty.Union[str, bool, int, float, enum.Enum, datetime.date]
 
 class LoadedField(ty.NamedTuple):
     src: str
-    fld: 'BaseField'
+    fld: "BaseField"
     loc: shrl.exceptions.SourceLocation
 
     def _parse(self) -> ty.Optional[FieldType]:
         return self.fld.parse(self.src, self.loc)
 
     def _parse_or(
-            self,
-            default: ty.Optional[FieldType],
+        self, default: ty.Optional[FieldType]
     ) -> ty.Optional[FieldType]:
         try:
             return self._parse()
@@ -51,8 +50,7 @@ class BaseField:
         self.required = required
 
     def handle_none(
-            self,
-            loc: shrl.exceptions.SourceLocation,
+        self, loc: shrl.exceptions.SourceLocation
     ) -> ty.Optional[FieldType]:
         "What to do with an empty field"
         if not self.required:
@@ -62,9 +60,7 @@ class BaseField:
             raise FieldParsingError(location=loc, msg=msg)
 
     def parse(
-            self,
-            src: ty.Optional[str],
-            loc: shrl.exceptions.SourceLocation,
+        self, src: ty.Optional[str], loc: shrl.exceptions.SourceLocation
     ) -> ty.Optional[FieldType]:
         if src is None:
             return self.handle_none(loc)
@@ -78,20 +74,12 @@ class BaseField:
                 raise err
 
     def load(
-            self,
-            src: str,
-            loc: shrl.exceptions.SourceLocation,
+        self, src: str, loc: shrl.exceptions.SourceLocation
     ) -> LoadedField:
-        return LoadedField(
-            src=src,
-            fld=self,
-            loc=loc,
-        )
+        return LoadedField(src=src, fld=self, loc=loc)
 
     def parse_type(
-            self,
-            src: str,
-            loc: shrl.exceptions.SourceLocation,
+        self, src: str, loc: shrl.exceptions.SourceLocation
     ) -> ty.Optional[FieldType]:
         "Implemented by concrete field parsers that handle specific types"
         raise NotImplementedError()
@@ -104,22 +92,19 @@ class BaseField:
         if type(self) is not type(other):
             return False
         else:
-            return all([
-                self.name == other.name,
-                self.required == other.required,
-            ])
+            return all(
+                [self.name == other.name, self.required == other.required]
+            )
 
 
 class BoolField(BaseField):
 
-    trues = frozenset(['1', 'true', 'y', 't', 'yes'])
-    falses = frozenset(['0', 'false', 'n', 'f', 'no'])
-    nones = frozenset(['none', 'null', ''])
+    trues = frozenset(["1", "true", "y", "t", "yes"])
+    falses = frozenset(["0", "false", "n", "f", "no"])
+    nones = frozenset(["none", "null", ""])
 
     def parse_type(
-            self,
-            src: str,
-            loc: shrl.exceptions.SourceLocation,
+        self, src: str, loc: shrl.exceptions.SourceLocation
     ) -> ty.Optional[bool]:
         try:
             normed_src = src.lower().strip()
@@ -139,15 +124,10 @@ class BoolField(BaseField):
 
 class DateField(BaseField):
     def parse_type(
-            self,
-            src: str,
-            loc: shrl.exceptions.SourceLocation,
+        self, src: str, loc: shrl.exceptions.SourceLocation
     ) -> datetime.date:
         try:
-            dt = datetime.datetime.strptime(
-                src,
-                "%Y-%m-%d",
-            )
+            dt = datetime.datetime.strptime(src, "%Y-%m-%d")
             return dt.date()
         except ValueError as v:
             msg = "Expected a date in the format YYYY-MM-DD; got '{}' instead"
@@ -159,9 +139,7 @@ class DateField(BaseField):
 
 class NumberField(BaseField):
     def parse_type(
-            self,
-            src: str,
-            loc: shrl.exceptions.SourceLocation,
+        self, src: str, loc: shrl.exceptions.SourceLocation
     ) -> ty.Union[int, float]:
         # First, try to convert the input to a number
         try:
@@ -173,15 +151,13 @@ class NumberField(BaseField):
         except Exception:
             pass
         raise FieldParsingError(
-            loc,
-            f"Unexpected error parsing numeric field: '{src}'",
+            loc, f"Unexpected error parsing numeric field: '{src}'"
         )
 
 
 class StringField(BaseField):
     def handle_blank(
-            self,
-            loc: shrl.exceptions.SourceLocation,
+        self, loc: shrl.exceptions.SourceLocation
     ) -> ty.Optional[str]:
         if self.required:
             raise FieldParsingError(loc, "Unexpected blank field")
@@ -189,9 +165,7 @@ class StringField(BaseField):
             return None
 
     def parse_type(
-            self,
-            src: str,
-            loc: shrl.exceptions.SourceLocation,
+        self, src: str, loc: shrl.exceptions.SourceLocation
     ) -> ty.Optional[str]:
         try:
             parsed = src.strip()
@@ -209,10 +183,7 @@ class EnumField(BaseField):
     target: enum.Enum
 
     def __init__(
-            self,
-            name: str,
-            options: ty.Iterable[str],
-            required: bool = False,
+        self, name: str, options: ty.Iterable[str], required: bool = False
     ) -> None:
         super(EnumField, self).__init__(name=name, required=required)
         if options is None:
@@ -223,9 +194,7 @@ class EnumField(BaseField):
     # This function returns an enum that's constructed at runtime. I'm not sure
     # how to represent that with `typing`.
     def parse_type(
-            self,
-            src: str,
-            loc: shrl.exceptions.SourceLocation,
+        self, src: str, loc: shrl.exceptions.SourceLocation
     ) -> enum.Enum:
         # NOTE(nknight): typing doesn't support iterating enums yet.
         try:
@@ -243,14 +212,9 @@ class EnumField(BaseField):
 
 
 class ForeignKeyField(StringField):
-    '''Like a string field, but gets more checking at the Schema level'''
+    """Like a string field, but gets more checking at the Schema level"""
 
-    def __init__(
-            self,
-            name: str,
-            target: str,
-            required: bool = True,
-    ) -> None:
+    def __init__(self, name: str, target: str, required: bool = True) -> None:
         super(ForeignKeyField, self).__init__(name, required)
         if target is None:
             msg = "ForeignKeyField missing a target: {}"

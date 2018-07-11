@@ -1,4 +1,4 @@
-'''Functions that perform high-level tasks'''
+"""Functions that perform high-level tasks"""
 import argparse
 
 
