@@ -36,8 +36,7 @@ def loaded_row_strat(draw):
 
 
 start_row = {
-    key_field:
-    shrl.field.LoadedField(
+    key_field: shrl.field.LoadedField(
         src="3",
         fld=shrl.field.NumberField(name=key_field, required=True),
         loc=location_strat().example(),
@@ -133,9 +132,9 @@ class TestGetNamedField(unittest.TestCase):
     def test_all_and_only_requested_fields_are_retrieved(self, row):
 
         combos = [
-            ("key field", ),
+            ("key field",),
             ("key field", "extra field"),
-            ("extra field", ),
+            ("extra field",),
             ("extra field", "superfluous field"),
         ]
 
