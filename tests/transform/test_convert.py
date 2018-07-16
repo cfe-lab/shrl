@@ -44,6 +44,7 @@ EXAMPLE_CASE = case.Case(
                 "meld": None,
                 "ishak": None,
                 "bil": None,
+                "hemo": None,
                 "alb": 3.5,
                 "inr": None,
                 "phos": 4.5,
@@ -99,6 +100,7 @@ EXAMPLE_CASE = case.Case(
                 "meld": None,
                 "ishak": None,
                 "bil": None,
+                "hemo": None,
                 "alb": 3.5,
                 "inr": None,
                 "phos": 4.5,
@@ -128,10 +130,10 @@ EXAMPLE_CASE = case.Case(
 class TestBasicConversionFunctions(unittest.TestCase):
     "Test conversion functions that reorganize data but don't change it."
 
-    def compare_fields(self, flds, obj1, obj2):
+    def compare_fields(self, flds, src, trn):
         def compare_field(fld):
-            val1 = getattr(obj1, fld)
-            val2 = getattr(obj2, fld)
+            val1 = src[fld]
+            val2 = getattr(trn, fld)
             msg = "Expected '{fld}' field to be equal".format(fld=fld)
             self.assertEqual(val1, val2, msg)
 
@@ -150,29 +152,60 @@ class TestBasicConversionFunctions(unittest.TestCase):
 
     def test_behavior_data(self):
         person_id = uuid.uuid4()
-        expected_behavior_data = entities.BehaviorData(
-            person_id=person_id,
-            sex_ori=None,
-            idu=True,
-            idu_recent=None,
-            ndu=False,
-            ndu_recent=None,
-            prison=None,
-            id=None,
-        )
         constructed_behavior_data = convert.behavior_data(
             person_id=person_id, c=EXAMPLE_CASE
         )
-        flds = (
-            "person_id",
-            "sex_ori",
-            "idu",
-            "idu_recent",
-            "ndu",
-            "ndu_recent",
-            "prison",
-        )
+        flds = ("sex_ori", "idu", "idu_recent", "ndu", "ndu_recent", "prison")
         self.compare_fields(
-            flds, constructed_behavior_data, expected_behavior_data
+            flds, EXAMPLE_CASE.behavior, constructed_behavior_data
         )
         self.assertIsInstance(constructed_behavior_data.id, uuid.UUID)
+        self.assertEqual(constructed_behavior_data.person_id, person_id)
+
+    def test_clinical_data(self):
+        person_id = uuid.uuid4()
+        constructed_clinical_data = convert.clinical_data(
+            person_id, c=EXAMPLE_CASE
+        )
+        self.assertEqual(
+            2,
+            len(constructed_clinical_data),
+            "Expected two clinical records to be transformed.",
+        )
+        flds = (
+            "kind",
+            "hiv",
+            "hbv",
+            "ost",
+            "cirr",
+            "fibrosis",
+            "inflamation",
+            "metavir_by",
+            "stiff",
+            "alt",
+            "ast",
+            "crt",
+            "egfr",
+            "ctp",
+            "meld",
+            "ishak",
+            "bil",
+            "hemo",
+            "alb",
+            "inr",
+            "phos",
+            "urea",
+            "plate",
+            "CD4",
+            "crp",
+            "il28b",
+            "asc",
+            "var_bleed",
+            "hep_car",
+            "transpl",
+            "vl",
+        )
+        for src, trn in zip(EXAMPLE_CASE.clinical, constructed_clinical_data):
+            self.assertEqual(trn.person_id, person_id)
+            self.assertIsInstance(trn.id, uuid.UUID)
+            self.compare_fields(flds, src.values, trn)
