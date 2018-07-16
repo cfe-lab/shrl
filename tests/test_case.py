@@ -7,8 +7,7 @@ import shrl.case
 import shrl.exceptions
 import shrl.field
 import shrl.row
-
-from . import test_row
+from tests import test_row
 
 key_field = "key field"
 example_fields = [key_field, "superfluous field", "extra field"]

@@ -19,20 +19,14 @@ setuptools.setup(
     name="shrl",
     version=shrl.__version__,
     packages=setuptools.find_packages(),
-    entry_points={
-        'console_scripts': [
-            'shrl = shrl.__main__:main',
-        ],
-    },
-    author='Nathaniel Knight',
-    author_email='nknight@cfenet.ubc.ca',
-    description=('The SHARED Quality, Uniformity, and Sanity Helper'),
-    license='Apache2',
+    entry_points={"console_scripts": ["shrl = shrl.__main__:main"]},
+    author="Nathaniel Knight",
+    author_email="nknight@cfenet.ubc.ca",
+    description=("The SHARED Quality, Uniformity, and Sanity Helper"),
+    license="Apache2",
     url="https://github.com/hcv-shared/shrl",
     python_requires=">=3.6,<4",
-    test_suite='test',
+    test_suite="tests",
     install_requires=install_requires,
-    extras_require={
-        "tests": tests_require,
-    },
+    extras_require={"tests": tests_require},
 )
