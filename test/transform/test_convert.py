@@ -125,8 +125,20 @@ EXAMPLE_CASE = case.Case(
 )
 
 
-class TestLossToFollowup(unittest.TestCase):
-    def test_basic_parse(self):
+class TestBasicConversionFunctions(unittest.TestCase):
+    "Test conversion functions that reorganize data but don't change it."
+
+    def compare_fields(self, flds, obj1, obj2):
+        def compare_field(fld):
+            val1 = getattr(obj1, fld)
+            val2 = getattr(obj2, fld)
+            msg = "Expected '{fld}' field to be equal".format(fld=fld)
+            self.assertEqual(val1, val2, msg)
+
+        for fld in flds:
+            compare_field(fld)
+
+    def test_loss_to_followup(self):
         person_id = uuid.uuid4()
         expected_ltfu = entities.LossToFollowUp(
             person_id=person_id, ltfu_year=2018, died=False, cod=None
@@ -135,3 +147,32 @@ class TestLossToFollowup(unittest.TestCase):
             person_id=person_id, c=EXAMPLE_CASE
         )
         self.assertEqual(constructed_ltfu, expected_ltfu)
+
+    def test_behavior_data(self):
+        person_id = uuid.uuid4()
+        expected_behavior_data = entities.BehaviorData(
+            person_id=person_id,
+            sex_ori=None,
+            idu=True,
+            idu_recent=None,
+            ndu=False,
+            ndu_recent=None,
+            prison=None,
+            id=None,
+        )
+        constructed_behavior_data = convert.behavior_data(
+            person_id=person_id, c=EXAMPLE_CASE
+        )
+        flds = (
+            "person_id",
+            "sex_ori",
+            "idu",
+            "idu_recent",
+            "ndu",
+            "ndu_recent",
+            "prison",
+        )
+        self.compare_fields(
+            flds, constructed_behavior_data, expected_behavior_data
+        )
+        self.assertIsInstance(constructed_behavior_data.id, uuid.UUID)
