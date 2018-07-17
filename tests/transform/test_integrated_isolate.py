@@ -21,7 +21,7 @@ class TestSimpleIsolateIntegrated(unittest.TestCase):
 
     def test_integrated(self):
         clinical_isolate_params = {
-            "person_id": 0,
+            "case_id": 0,
             "sample_kind": "bl",
         }
         sequence_params = {
@@ -59,7 +59,7 @@ class TestSimpleIsolateIntegrated(unittest.TestCase):
         )
         self.assert_namedtuple_with_attrs(
             entities["ClinicalIsolate"][0],
-            ("isolate_id", "person_id", "sample_kind"),
+            ("isolate_id", "case_id", "sample_kind"),
         )
         self.assert_namedtuple_with_attrs(entities["Sequence"][0], (
             "id",

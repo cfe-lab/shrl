@@ -141,31 +141,31 @@ class TestBasicConversionFunctions(unittest.TestCase):
             compare_field(fld)
 
     def test_loss_to_followup(self):
-        person_id = uuid.uuid4()
+        case_id = uuid.uuid4()
         expected_ltfu = entities.LossToFollowUp(
-            person_id=person_id, ltfu_year=2018, died=False, cod=None
+            case_id=case_id, ltfu_year=2018, died=False, cod=None
         )
         constructed_ltfu = convert.loss_to_followup(
-            person_id=person_id, c=EXAMPLE_CASE
+            case_id=case_id, c=EXAMPLE_CASE
         )
         self.assertEqual(constructed_ltfu, expected_ltfu)
 
     def test_behavior_data(self):
-        person_id = uuid.uuid4()
+        case_id = uuid.uuid4()
         constructed_behavior_data = convert.behavior_data(
-            person_id=person_id, c=EXAMPLE_CASE
+            case_id=case_id, c=EXAMPLE_CASE
         )
         flds = ("sex_ori", "idu", "idu_recent", "ndu", "ndu_recent", "prison")
         self.compare_fields(
             flds, EXAMPLE_CASE.behavior, constructed_behavior_data
         )
         self.assertIsInstance(constructed_behavior_data.id, uuid.UUID)
-        self.assertEqual(constructed_behavior_data.person_id, person_id)
+        self.assertEqual(constructed_behavior_data.case_id, case_id)
 
     def test_clinical_data(self):
-        person_id = uuid.uuid4()
+        case_id = uuid.uuid4()
         constructed_clinical_data = convert.clinical_data(
-            person_id, c=EXAMPLE_CASE
+            case_id, c=EXAMPLE_CASE
         )
         self.assertEqual(
             2,
@@ -206,6 +206,6 @@ class TestBasicConversionFunctions(unittest.TestCase):
             "vl",
         )
         for src, trn in zip(EXAMPLE_CASE.clinical, constructed_clinical_data):
-            self.assertEqual(trn.person_id, person_id)
+            self.assertEqual(trn.case_id, case_id)
             self.assertIsInstance(trn.id, uuid.UUID)
             self.compare_fields(flds, src.values, trn)
