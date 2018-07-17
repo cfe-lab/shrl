@@ -1,8 +1,9 @@
 import unittest
 import uuid
 
+from shared_schema import regimens as ss_regimens
 from shrl import case
-from shrl.transform import convert, entities
+from shrl.transform import convert, entities, util
 
 EXAMPLE_CASE = case.Case(
     participant={
@@ -209,3 +210,16 @@ class TestBasicConversionFunctions(unittest.TestCase):
             self.assertEqual(trn.case_id, case_id)
             self.assertIsInstance(trn.id, uuid.UUID)
             self.compare_fields(flds, src.values, trn)
+
+    def test_treatment_data(self):
+        case_id = uuid.uuid4()
+        rreg = util.RegimenRegistry()
+        constructed_treatment_data = convert.treatment_data(
+            rreg, case_id, EXAMPLE_CASE
+        )
+        expected_regimen = ss_regimens.cannonical.from_string("DAKLINZA")
+        for tx in constructed_treatment_data:
+            self.assertEqual(tx.case_id, case_id)
+            self.assertIsInstance(tx.id, uuid.UUID)
+            self.assertIsInstance(tx.regimen, uuid.UUID)
+            self.assertIn(expected_regimen, rreg)

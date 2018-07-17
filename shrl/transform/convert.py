@@ -3,9 +3,10 @@
 import typing as ty
 import uuid
 
+import shared_schema.regimens as ss_regimens
 from shrl import case
 
-from . import entities
+from . import entities, util
 
 
 def loss_to_followup(
@@ -81,3 +82,32 @@ def clinical_data(
         )
 
     return [parse_one(clinical) for clinical in c.clinical]
+
+
+def treatment_data(
+    rreg: util.RegimenRegistry, case_id: uuid.UUID, c: case.Case
+) -> ty.List[entities.TreatmentData]:
+    def tx_data(cln: case.Clinical) -> entities.TreatmentData:
+        tx_id = uuid.uuid4()
+
+        def get_reg_id(key: str) -> ty.Optional[uuid.UUID]:
+            src = cln.values.get(key)
+            if src is None:
+                return None
+            reg = ss_regimens.cannonical.from_string(src)
+            reg_id = rreg.get_or_create_id(reg)
+            return reg_id
+
+        return entities.TreatmentData(
+            id=tx_id,
+            case_id=case_id,
+            first_treatment=cln.values.get("first_treatment"),
+            duration_act=cln.values.get("duration_act"),
+            regimen=get_reg_id("regimen"),
+            prev_regimen=get_reg_id("prev_regimen"),
+            pprev_regimen=get_reg_id("pprev_regimen"),
+            response=cln.values.get("response"),
+            notes=cln.values.get("treatment_notes")
+        )
+
+    return [tx_data(cln) for cln in c.clinical]
