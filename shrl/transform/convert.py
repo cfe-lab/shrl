@@ -103,9 +103,9 @@ def treatment_data(
             case_id=case_id,
             first_treatment=cln.values.get("first_treatment"),
             duration_act=cln.values.get("duration_act"),
-            regimen=get_reg_id("regimen"),
-            prev_regimen=get_reg_id("prev_regimen"),
-            pprev_regimen=get_reg_id("pprev_regimen"),
+            regimen_id=get_reg_id("regimen"),
+            prev_regimen_id=get_reg_id("prev_regimen"),
+            pprev_regimen_id=get_reg_id("pprev_regimen"),
             response=cln.values.get("response"),
             notes=cln.values.get("treatment_notes")
         )

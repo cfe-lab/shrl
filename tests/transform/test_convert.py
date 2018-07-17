@@ -221,5 +221,5 @@ class TestBasicConversionFunctions(unittest.TestCase):
         for tx in constructed_treatment_data:
             self.assertEqual(tx.case_id, case_id)
             self.assertIsInstance(tx.id, uuid.UUID)
-            self.assertIsInstance(tx.regimen, uuid.UUID)
+            self.assertIsInstance(tx.regimen_id, uuid.UUID)
             self.assertIn(expected_regimen, rreg)
