@@ -30,6 +30,16 @@ class SourceStudy(ty.NamedTuple):
     notes: ty.Optional[str]
 
 
+class Reference(ty.NamedTuple):
+    id: uuid.UUID
+    author: str
+    title: str
+    journal: ty.Optional[str]
+    url: ty.Optional[str]  # TODO(nknight): make this a urllib ParseResult?
+    publication_dt: str
+    pubmed_id: ty.Optional[str]
+
+
 def collaborators(parser: configparser.ConfigParser) -> ty.List[Collaborator]:
     collab_sections = [
         secname
@@ -75,6 +85,32 @@ def source_study(parser: configparser.ConfigParser) -> SourceStudy:
         )
     except ValueError:
         raise MetadataError("sourcestudy", "Invalid field")
+
+
+def references(parser: configparser.ConfigParser) -> ty.List[Reference]:
+    reference_sections = (
+        secname
+        for secname in parser.sections()
+        if secname.startswith("reference")
+    )
+    result = []
+    for secname in reference_sections:
+        raw_args = parser[secname]
+        if raw_args.get("id") is None:
+            ref_id = uuid.uuid4()
+        else:
+            ref_id = uuid.UUID(raw_args.get("id"))
+        reference = Reference(
+            id=ref_id,
+            author=raw_args["author"],
+            title=raw_args["title"],
+            journal=raw_args.get("journal"),
+            url=raw_args.get("url"),
+            publication_dt=raw_args["publication_dt"],
+            pubmed_id=raw_args.get("pubmed_id"),
+        )
+        result.append(reference)
+    return result
 
 
 def get_parser() -> configparser.ConfigParser:
