@@ -58,3 +58,56 @@ class TestParseCollaborator(unittest.TestCase):
         parsed = parse_config_str(src)
         with self.assertRaises(metadata.MetadataError):
             metadata.collaborators(parsed)
+
+
+class TestParseSourceStudy(unittest.TestCase):
+    def test_source_study(self):
+        src = textwrap.dedent(
+            """\
+            [collaborator]
+            id=fb1cd0e9-e181-4902-82bf-ee314ebe0227
+            name=asdf
+
+            [sourcestudy]
+            name=jkl
+            start_year = 1988
+            end_year = 1996
+            notes =
+              This was a study.
+            """
+        )
+        parsed = parse_config_str(src)
+        source_study = metadata.source_study(parsed)
+        expected = metadata.SourceStudy(
+            name="jkl",
+            start_year=1988,
+            end_year=1996,
+            notes="This was a study.",
+        )
+        self.assertEqual(source_study, expected)
+
+    def test_duplicate_source_studies_raises_error(self):
+        src = textwrap.dedent(
+            """\
+            [collaborator]
+            id=fb1cd0e9-e181-4902-82bf-ee314ebe0227
+            name=asdf
+
+            [sourcestudy]
+            name=jkl
+            start_year = 1988
+            end_year = 1996
+            notes =
+            This was a study.
+
+            [sourcestudy]
+            name=asdf
+            start_year = 2002
+            end_year = 2008
+            notes =
+            This was a different study.
+            """
+        )
+        with self.assertRaises(configparser.DuplicateSectionError):
+            parse_config_str(src)
+
