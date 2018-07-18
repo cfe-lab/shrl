@@ -112,3 +112,56 @@ class TestParseSourceStudy(unittest.TestCase):
         with self.assertRaises(configparser.DuplicateSectionError):
             parse_config_str(src)
 
+
+class TestParseReferences(unittest.TestCase):
+    def test_references(self):
+        src = textwrap.dedent(
+            """\
+            [collaborator]
+            id=fb1cd0e9-e181-4902-82bf-ee314ebe0227
+            name=asdf
+
+            [reference.1]
+            author=A
+            title=B
+            journal=C
+            publication_dt=2016-01-01
+            pubmed_id=0
+
+            [reference.2]
+            author=X
+            title=Y
+            journal=Z
+            url=https://journalclub.website/X/Y/Z
+            publication_dt=1996-10-24
+            """
+        )
+        parsed = parse_config_str(src)
+        extracted = metadata.references(parsed)
+        expected_fields = [
+            {
+                "author": "A",
+                "title": "B",
+                "journal": "C",
+                "publication_dt": "2016-01-01",
+                "pubmed_id": "0",
+            },
+            {
+                "author": "X",
+                "title": "Y",
+                "journal": "Z",
+                "url": "https://journalclub.website/X/Y/Z",
+                "publication_dt": "1996-10-24",
+            },
+        ]
+        self.assertEqual(
+            len(expected_fields),
+            len(extracted),
+            "Expected two references to be parsed",
+        )
+        for entity, expected_flds in zip(extracted, expected_fields):
+            for name, val in expected_flds.items():
+                self.assertEqual(getattr(entity, name), val)
+            self.assertIsInstance(entity.id, uuid.UUID)
+
+
