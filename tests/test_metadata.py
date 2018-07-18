@@ -57,4 +57,4 @@ class TestParseCollaborator(unittest.TestCase):
         src = ""
         parsed = parse_config_str(src)
         with self.assertRaises(metadata.MetadataError):
-            metadata.extract(parsed)
+            metadata.collaborators(parsed)
