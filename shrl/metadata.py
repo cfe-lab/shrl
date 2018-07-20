@@ -3,6 +3,7 @@ import logging
 import typing as ty
 import uuid
 
+import shared_schema.dao
 import shrl.exceptions
 
 log = logging.getLogger(__name__)
@@ -20,6 +21,15 @@ class MetadataError(shrl.exceptions.ShrlException):
         return tmpl.format(section=self.section, detail=self.detail)
 
 
+class DatabaseMismatchError(shrl.exceptions.ShrlException):
+    def __init__(self, tbl: str, detail: str) -> None:
+        self.tbl = tbl
+        self.detail = detail
+
+    def __str__(self) -> str:
+        return f"Existing data mismatch error in {self.tbl}: {self.detail}"
+
+
 class Collaborator(ty.NamedTuple):
     id: uuid.UUID
     name: str
@@ -29,7 +39,7 @@ class SourceStudy(ty.NamedTuple):
 
     name: str
     start_year: int
-    end_year: int
+    end_year: ty.Optional[int]
     notes: ty.Optional[str]
 
 
@@ -145,3 +155,75 @@ def parse(filepath: str) -> StudyData:
     parser = get_parser()
     parser.read(filepath)
     return extract(parser)
+
+
+class StudyDataDatabaseHandle:
+    "Manage verifying existing reference data records and creating new ones."
+
+    def __init__(self, data: StudyData, dao: shared_schema.dao.DAO) -> None:
+        self.data = data
+        self.dao = dao
+
+    @staticmethod
+    def db_mismatch_fields(
+        item: ty.Any, db_item: ty.Mapping, flds: ty.List[str]
+    ) -> ty.List[str]:
+        item_flds = [getattr(item, fld) for fld in flds]
+        db_flds = [db_item[fld] for fld in flds]
+        return [f for (i, d, f) in zip(item_flds, db_flds, flds) if i != d]
+
+    def db_items_match(
+        self,
+        table_name: str,
+        items: ty.List[ty.Any],
+        match_fld: str,
+        flds: ty.List[str],
+    ) -> None:
+        "Check that existing entities match the given items."
+        tbl = getattr(self.dao, table_name)
+        if tbl is None:
+            raise DatabaseMismatchError(table_name, f"Invalid Table: {tbl}")
+        col = getattr(tbl.c, match_fld)
+        if col is None:
+            raise DatabaseMismatchError(
+                table_name, f"Invalid column {match_fld} on {table_name}"
+            )
+        for item in items:
+            match_val = getattr(item, match_fld)
+            existing = self.dao.execute(
+                tbl.select(col == match_val)
+            ).fetchone()
+            if existing is not None:
+                mismatch_flds = self.db_mismatch_fields(item, existing, flds)
+                if mismatch_flds:
+                    msg = "Fields don't match: {}".format(
+                        ", ".join(mismatch_flds)
+                    )
+                    raise DatabaseMismatchError(table_name, msg)
+
+    def check_existing(self) -> None:
+        """Check if the provided reference data exists, and the existing
+        records match the given data."""
+        self.db_items_match(
+            "sourcestudy",
+            [self.data.source_study],
+            "name",
+            ["start_year", "end_year", "notes"],
+        )
+        self.db_items_match(
+            "reference",
+            self.data.references,
+            "id",
+            [
+                "id",
+                "author",
+                "title",
+                "journal",
+                "url",
+                "publication_dt",
+                "pubmed_id",
+            ],
+        )
+        self.db_items_match(
+            "collaborator", self.data.collaborators, "id", ["name"]
+        )
