@@ -4,42 +4,41 @@ import uuid
 import shared_schema.dao
 from shrl import metadata
 
+EX_REFERENCE = metadata.Reference(
+    id=uuid.uuid4(),
+    author="Prior Worker",
+    title="Dr. Prior Work",
+    journal="Prestigious Journal",
+    pubmed_id=str(uuid.uuid4()),
+    publication_dt=None,
+    url=None,
+)
+EX_SOURCESTUDY = metadata.SourceStudy(
+    name="Prior Source Study",
+    start_year=2000,
+    end_year=2002,
+    notes="Notes on the study.",
+)
+EX_COLLABORATOR = metadata.Collaborator(
+    id=uuid.uuid4(), name="Just Prior Worker to their friends"
+)
+EX_STUDYDATA = metadata.StudyData(
+    source_study=EX_SOURCESTUDY,
+    collaborators=[EX_COLLABORATOR],
+    references=[EX_REFERENCE],
+)
+
 
 class TestConsistencyWithExistingEntities(unittest.TestCase):
     def setUp(self):
         self.dao = shared_schema.dao.DAO("sqlite:///:memory:")
         self.dao.init_db()
-        self.existing_reference = metadata.Reference(
-            id=uuid.uuid4(),
-            author="Prior Worker",
-            title="Dr. Prior Work",
-            journal="Prestigious Journal",
-            pubmed_id=str(uuid.uuid4()),
-            publication_dt=None,
-            url=None,
-        )
-        self.dao.insert("reference", self.existing_reference._asdict())
-        self.existing_sourcestudy = metadata.SourceStudy(
-            name="Prior Source Study",
-            start_year=2000,
-            end_year=2002,
-            notes="Notes on the study.",
-        )
-        self.dao.insert("sourcestudy", self.existing_sourcestudy._asdict())
-        self.existing_collaborator = metadata.Collaborator(
-            id=uuid.uuid4(), name="Just Prior Worker to their friends"
-        )
-        self.dao.insert("collaborator", self.existing_collaborator._asdict())
-        self.existing_study_data = metadata.StudyData(
-            source_study=self.existing_sourcestudy,
-            collaborators=[self.existing_collaborator],
-            references=[self.existing_reference],
-        )
+        self.dao.insert("reference", EX_REFERENCE._asdict())
+        self.dao.insert("sourcestudy", EX_SOURCESTUDY._asdict())
+        self.dao.insert("collaborator", EX_COLLABORATOR._asdict())
 
     def test_matching_sourcedata_validates(self):
-        handle = metadata.StudyDataDatabaseHandle(
-            self.existing_study_data, self.dao
-        )
+        handle = metadata.StudyDataDatabaseHandle(EX_STUDYDATA, self.dao)
         handle.check_existing()
 
     def test_nonexistant_sourcedata_validates(self):
@@ -67,16 +66,16 @@ class TestConsistencyWithExistingEntities(unittest.TestCase):
 
     def test_mismatching_sourcedata_does_not_validate(self):
         with self.assertRaises(metadata.DatabaseMismatchError):
-            changed_sourcestudy = self.existing_study_data._replace(
-                source_study=self.existing_sourcestudy._replace(start_year=0)
+            changed_sourcestudy = EX_STUDYDATA._replace(
+                source_study=EX_SOURCESTUDY._replace(start_year=0)
             )
             metadata.StudyDataDatabaseHandle(
                 changed_sourcestudy, self.dao
             ).check_existing()
         with self.assertRaises(metadata.DatabaseMismatchError):
-            changed_reference = self.existing_study_data._replace(
+            changed_reference = EX_STUDYDATA._replace(
                 references=[
-                    self.existing_reference._replace(
+                    EX_REFERENCE._replace(
                         author="Updated Author", title="New Title"
                     )
                 ]
@@ -85,11 +84,9 @@ class TestConsistencyWithExistingEntities(unittest.TestCase):
                 changed_reference, self.dao
             ).check_existing()
         with self.assertRaises(metadata.DatabaseMismatchError):
-            changed_collaborator = self.existing_study_data._replace(
+            changed_collaborator = EX_STUDYDATA._replace(
                 collaborators=[
-                    self.existing_collaborator._replace(
-                        name="Updated Collaborator Name"
-                    )
+                    EX_COLLABORATOR._replace(name="Updated Collaborator Name")
                 ]
             )
             metadata.StudyDataDatabaseHandle(
@@ -102,9 +99,60 @@ class TestCreatingNewEntities(unittest.TestCase):
         self.dao = shared_schema.dao.DAO("sqlite:///:memory:")
         self.dao.init_db()
 
-    @unittest.skip("TODO")
-    def test_adding_new_entities(self):
-        pass
+    def assert_created_and_flds_equal(self, item, table, match_pred, flds):
+        retrieved = self.dao.execute(table.select(match_pred)).fetchone()
+        self.assertIsNotNone(retrieved, "Missing value from database")
+        for fld in flds:
+            self.assertEqual(getattr(item, fld), retrieved[fld])
+
+    def test_adding_new_entities_one_at_a_time(self):
+        hndl = metadata.StudyDataDatabaseHandle(EX_STUDYDATA, self.dao)
+        hndl.check_existing()
+        hndl.create_new()
+
+        self.assert_created_and_flds_equal(
+            EX_REFERENCE,
+            self.dao.reference,
+            self.dao.reference.c.id == EX_REFERENCE.id,
+            [
+                "author",
+                "title",
+                "journal",
+                "pubmed_id",
+                "publication_dt",
+                "url",
+            ],
+        )
+        self.assert_created_and_flds_equal(
+            EX_COLLABORATOR,
+            self.dao.collaborator,
+            self.dao.collaborator.c.id == EX_COLLABORATOR.id,
+            ["id", "name"],
+        )
+        self.assert_created_and_flds_equal(
+            EX_SOURCESTUDY,
+            self.dao.sourcestudy,
+            self.dao.sourcestudy.c.id == EX_SOURCESTUDY.id,
+            ["name", "start_year", "end_year", "notes"],
+        )
+
+    def test_adding_multiple_entities_at_a_time(self):
+        new_collaborator = metadata.Collaborator(
+            id=uuid.uuid4(), name="An additional Collaborator"
+        )
+        new_collaborators = [new_collaborator, EX_COLLABORATOR]
+        new_study_data = EX_STUDYDATA._replace(collaborators=new_collaborators)
+        hndl = metadata.StudyDataDatabaseHandle(new_study_data, self.dao)
+        hndl.check_existing()
+        hndl.create_new()
+
+        for collab in new_collaborators:
+            self.assert_created_and_flds_equal(
+                collab,
+                self.dao.collaborator,
+                self.dao.collaborator.c.id == collab.id,
+                ["name", "id"],
+            )
 
 
 class TestSyncingToDatabase(unittest.TestCase):
