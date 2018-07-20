@@ -1,8 +1,11 @@
 import configparser
+import logging
 import typing as ty
 import uuid
 
 import shrl.exceptions
+
+log = logging.getLogger(__name__)
 
 
 class MetadataError(shrl.exceptions.ShrlException):
@@ -135,3 +138,10 @@ def extract(parser: configparser.ConfigParser) -> StudyData:
 def get_parser() -> configparser.ConfigParser:
     return configparser.ConfigParser(interpolation=None, allow_no_value=True)
 
+
+def parse(filepath: str) -> StudyData:
+    """Load metadata from a Conf file"""
+    log.info("Loading metadata from {}".format(filepath))
+    parser = get_parser()
+    parser.read(filepath)
+    return extract(parser)
