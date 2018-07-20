@@ -40,6 +40,12 @@ class Reference(ty.NamedTuple):
     pubmed_id: ty.Optional[str]
 
 
+class StudyData(ty.NamedTuple):
+    source_study: SourceStudy
+    collaborators: ty.List[Collaborator]
+    references: ty.List[Reference]
+
+
 def collaborators(parser: configparser.ConfigParser) -> ty.List[Collaborator]:
     collab_sections = [
         secname
@@ -111,6 +117,19 @@ def references(parser: configparser.ConfigParser) -> ty.List[Reference]:
         )
         result.append(reference)
     return result
+
+
+def extract(parser: configparser.ConfigParser) -> StudyData:
+    if not parser.has_section("collaborator"):
+        raise MetadataError(
+            "collaborator", "Missing required section 'collaborator'"
+        )
+    collab = collaborators(parser)
+    sstudy = source_study(parser)
+    refs = references(parser)
+    return StudyData(
+        collaborators=collab, source_study=sstudy, references=refs
+    )
 
 
 def get_parser() -> configparser.ConfigParser:
