@@ -1,6 +1,8 @@
 import unittest
 import uuid
 
+import sqlalchemy.sql as sql
+
 import shared_schema.dao
 from shrl import metadata
 
@@ -100,12 +102,15 @@ class TestCreatingNewEntities(unittest.TestCase):
         self.dao.init_db()
 
     def assert_created_and_flds_equal(self, item, table, match_pred, flds):
-        retrieved = self.dao.execute(table.select(match_pred)).fetchone()
+        retrieved = self.dao.execute(
+            table.select().where(match_pred)
+        ).fetchone()
         self.assertIsNotNone(retrieved, "Missing value from database")
         for fld in flds:
             self.assertEqual(getattr(item, fld), retrieved[fld])
 
     def test_adding_new_entities_one_at_a_time(self):
+        "A StudyData with one new entity of each kind syncs correctly"
         hndl = metadata.StudyDataDatabaseHandle(EX_STUDYDATA, self.dao)
         hndl.check_existing()
         hndl.create_new()
@@ -132,11 +137,44 @@ class TestCreatingNewEntities(unittest.TestCase):
         self.assert_created_and_flds_equal(
             EX_SOURCESTUDY,
             self.dao.sourcestudy,
-            self.dao.sourcestudy.c.id == EX_SOURCESTUDY.id,
+            self.dao.sourcestudy.c.name == EX_SOURCESTUDY.name,
             ["name", "start_year", "end_year", "notes"],
         )
 
+    def test_associations_are_created(self):
+        "Many-to-many associations are created when syncing"
+        hndl = metadata.StudyDataDatabaseHandle(EX_STUDYDATA, self.dao)
+
+        hndl.check_existing()
+        hndl.create_new()
+
+        def assert_item_created(tbl_name, **properties):
+            tbl = getattr(self.dao, tbl_name)
+            preds = [
+                tbl.columns[fld] == val for fld, val in properties.items()
+            ]
+            pred = sql.and_(*preds)
+            query = tbl.select().where(pred)
+            result = self.dao.execute(query).fetchone()
+            prop_msgs = (f"{key}={val}" for key, val in properties.items())
+            self.assertIsNotNone(
+                result,
+                f"Expected a '{tbl_name}'' where {', '.join(prop_msgs)}",
+            )
+
+        assert_item_created(
+            "sourcestudyreference",
+            sourcestudy_id=EX_SOURCESTUDY.name,
+            reference_id=EX_REFERENCE.id,
+        )
+        assert_item_created(
+            "sourcestudycollaborator",
+            study_name=EX_SOURCESTUDY.name,
+            collaborator_id=EX_COLLABORATOR.id,
+        )
+
     def test_adding_multiple_entities_at_a_time(self):
+        "A StudyData with multiple new entities is correctly synced"
         new_collaborator = metadata.Collaborator(
             id=uuid.uuid4(), name="An additional Collaborator"
         )
@@ -156,10 +194,77 @@ class TestCreatingNewEntities(unittest.TestCase):
 
 
 class TestSyncingToDatabase(unittest.TestCase):
-    @unittest.skip("TODO")
-    def test_syncing_to_clean_database(self):
-        pass
+    def setUp(self):
+        self.dao = shared_schema.dao.DAO("sqlite:///:memory:")
+        self.dao.init_db()
 
-    @unittest.skip("TODO")
+    def assert_created_and_flds_equal(self, item, table, match_pred):
+        flds = item._fields
+        retrieved = self.dao.execute(
+            table.select().where(match_pred)
+        ).fetchone()
+        self.assertIsNotNone(retrieved, "Missing value from database")
+        for fld in flds:
+            self.assertEqual(getattr(item, fld), retrieved[fld])
+
+    def test_syncing_to_clean_database(self):
+        hndl = metadata.StudyDataDatabaseHandle(EX_STUDYDATA, self.dao)
+        hndl.check_existing()
+        hndl.create_new()
+        self.assert_created_and_flds_equal(
+            EX_COLLABORATOR,
+            self.dao.collaborator,
+            self.dao.collaborator.c.id == EX_COLLABORATOR.id,
+        )
+        self.assert_created_and_flds_equal(
+            EX_SOURCESTUDY,
+            self.dao.sourcestudy,
+            self.dao.sourcestudy.c.name == EX_SOURCESTUDY.name,
+        )
+        self.assert_created_and_flds_equal(
+            EX_REFERENCE,
+            self.dao.reference,
+            self.dao.reference.c.id == EX_REFERENCE.id,
+        )
+
     def test_syncing_to_database_with_existing_data(self):
-        pass
+        # Collaborator already exists in database
+        self.dao.insert("collaborator", EX_COLLABORATOR._asdict())
+        self.assert_created_and_flds_equal(
+            EX_COLLABORATOR,
+            self.dao.collaborator,
+            self.dao.collaborator.c.id == EX_COLLABORATOR.id,
+        )
+        # When syncing, no error is thrown.
+        hndl = metadata.StudyDataDatabaseHandle(EX_STUDYDATA, self.dao)
+        hndl.check_existing()
+        hndl.create_new()
+        self.assert_created_and_flds_equal(
+            EX_COLLABORATOR,
+            self.dao.collaborator,
+            self.dao.collaborator.c.id == EX_COLLABORATOR.id,
+        )
+        self.assert_created_and_flds_equal(
+            EX_SOURCESTUDY,
+            self.dao.sourcestudy,
+            self.dao.sourcestudy.c.name == EX_SOURCESTUDY.name,
+        )
+        self.assert_created_and_flds_equal(
+            EX_REFERENCE,
+            self.dao.reference,
+            self.dao.reference.c.id == EX_REFERENCE.id,
+        )
+
+    def test_syncing_to_database_with_conflicting_data(self):
+        # Collaborator already exists in database, with different name
+        altered_collaborator = EX_COLLABORATOR._replace(name="Different Name")
+        self.dao.insert("collaborator", altered_collaborator._asdict())
+        self.assert_created_and_flds_equal(
+            altered_collaborator,
+            self.dao.collaborator,
+            self.dao.collaborator.c.id == EX_COLLABORATOR.id,
+        )
+        with self.assertRaises(metadata.DatabaseMismatchError):
+            hndl = metadata.StudyDataDatabaseHandle(EX_STUDYDATA, self.dao)
+            hndl.check_existing()
+            hndl.create_new()

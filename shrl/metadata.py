@@ -1,3 +1,36 @@
+"""Parse and load metadata from a .conf file
+
+The supported items in the configuration file are one Collaborator,
+one SourceStudy, and any number of References.
+
+```conf
+[collaborator]
+id = A UUID (e.g. 206a5262-d158-4c5f-b1d7-415e2fcded4b)
+name = The collaborator's name (be it an individual or an organization)
+
+[sourcestudy]
+name = The study's name
+start_year = The year data collection began
+end_year = The year data collection ended
+notes =
+  Any notes that might be helpful, which can
+  span several lines as long as they're indented.
+
+[reference.1]
+id = A unique ID (for linking to an existing Reference in the database)
+author = The reference's author
+title = The reference's title
+journal = The journal where this reference was published
+publication_dt = The reference's date of publication
+url = A URL where this reference can be accessed
+pubmed_id = If applicable, the reference's PubMed ID
+```
+
+Person records loaded with metadata will be associated with the
+SourceStudy. The SourceStudy will be associated with the
+Collaborator, and with any references provided in the metadata file.
+"""
+
 import configparser
 import logging
 import typing as ty
@@ -227,3 +260,30 @@ class StudyDataDatabaseHandle:
         self.db_items_match(
             "collaborator", self.data.collaborators, "id", ["name"]
         )
+
+    def create_new(self) -> None:
+        with self.dao.engine.begin():
+            self.dao.insert_or_check_identical(
+                "sourcestudy", self.data.source_study._asdict()
+            )
+            source_study_id = self.data.source_study.name
+            for ref in self.data.references:
+                self.dao.insert_or_check_identical("reference", ref._asdict())
+                self.dao.insert_or_check_identical(
+                    "sourcestudyreference",
+                    {
+                        "sourcestudy_id": source_study_id,
+                        "reference_id": ref.id,
+                    },
+                )
+            for collaborator in self.data.collaborators:
+                self.dao.insert_or_check_identical(
+                    "collaborator", collaborator._asdict()
+                )
+                self.dao.insert_or_check_identical(
+                    "sourcestudycollaborator",
+                    {
+                        "collaborator_id": collaborator.id,
+                        "study_name": source_study_id,
+                    },
+                )
