@@ -2,6 +2,8 @@ import logging
 import typing as ty
 import uuid
 
+import Bio.SeqIO as seqio
+import Bio.SeqRecord as seqrecord
 import sqlalchemy.sql as sql
 
 import shared_schema.dao as dao
@@ -81,3 +83,101 @@ class RegimenRegistry(object):
                     **{nm: sql.bindparam(nm) for nm in incl_keys}
                 )
                 dao.execute(incl_stm, incl_values)
+
+
+T = ty.TypeVar("T", bound="SequenceRegistry")
+
+
+class SequenceRegistry(object):
+
+    SEQ_FILE_FORMAT = "fasta"
+
+    def __init__(self) -> None:
+        """Manages access to genetic sequences
+
+        Takes an iterable of biopython SeqRecords, extracts an ID from
+        each one, and stores them for random access.
+        """
+        self._seq_store: ty.Dict[str, seqrecord.SeqRecord] = dict()
+        self._hash_store: ty.Set[int] = set()
+
+    def __contains__(self, seq_id: str) -> bool:
+        return seq_id in self._seq_store
+
+    def get(self, seq_id: str) -> seqrecord.SeqRecord:
+        if seq_id not in self:
+            msg = "Missing sequence with id '{}'".format(seq_id)
+            raise KeyError(msg)
+        else:
+            return self._seq_store[seq_id]
+
+    @staticmethod
+    def id_function(seq: seqrecord.SeqRecord) -> str:
+        """Get a sequence's ID from its BioPython sequence object
+
+        When loading sequences from FASTA files, this function is
+        applied to each sequence. It should return a unique ID.
+
+        The base SequenceManager uses the sequence's ID unchanged;
+        subclasses may use other conventions (e.g. to pull a field out
+        of a character-delimited list in the title).
+        """
+        return str(seq.id)
+
+    @staticmethod
+    def hash_key(bio_seq: seqrecord.SeqRecord) -> ty.Tuple[str, str]:
+        """Returns a tuple of the fields on an input fasta sequence object
+        that should be considered for the sequence's hash
+        value. Default is name and sequence."""
+        name: str = bio_seq.name
+        seq: str = str(bio_seq.seq)
+        return (name, seq)
+
+    @classmethod
+    def sequence_hash(cls, seq: seqrecord.SeqRecord) -> int:
+        key = cls.hash_key(seq)
+        return hash(key)
+
+    def check_in_sequence(self, sequence: seqrecord.SeqRecord) -> None:
+        """Get a sequence's hash value and add it to the repository's hash
+        store, checking that we're not adding duplicates"""
+        hash_value = self.sequence_hash(sequence)
+        if hash_value in self._hash_store:
+            msg = "Duplicate sequence: name='{}'".format(sequence.name)
+            raise ValueError(msg)
+        self._hash_store.add(hash_value)
+
+    def add_seqs(self, sequences: ty.Iterable[seqrecord.SeqRecord]) -> None:
+        "Add a sequence of BioPython seq objects"
+        for seq in sequences:
+            self.check_in_sequence(seq)
+            seq_id = self.id_function(seq)
+            self._seq_store[seq_id] = seq
+
+    def add_file(self, filename: str) -> None:
+        seqs = self.file_seqs(filename)
+        self.add_seqs(seqs)
+
+    @classmethod
+    def file_seqs(
+        cls: ty.Type[T], filename: str
+    ) -> ty.Iterable[seqrecord.SeqRecord]:
+        "Load sequences from a file"
+        with open(filename) as inf:
+            seqs = list(seqio.parse(inf, cls.SEQ_FILE_FORMAT))
+        return seqs
+
+    @classmethod
+    def from_seqs(
+        cls: ty.Type[T], seqs: ty.Iterable[seqrecord.SeqRecord]
+    ) -> T:
+        repository = cls()
+        repository.add_seqs(seqs)
+        return repository
+
+    @classmethod
+    def from_files(cls: ty.Type[T], filenames: ty.Iterable[str]) -> T:
+        repository = cls()
+        for filename in filenames:
+            repository.add_file(filename)
+        return repository
