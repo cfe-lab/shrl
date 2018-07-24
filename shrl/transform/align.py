@@ -89,7 +89,7 @@ AlignmentEntities = ty.Dict[str, ty.List[ty.NamedTuple]]
 def make_entities(
     sequence: entities.Sequence,
     genotype: str,
-    subgenotype: str,
+    subgenotype: ty.Optional[str],
     genes: ty.List[str],
 ) -> AlignmentEntities:
     "Construct Alignment and Substitution entities from a sequence."
