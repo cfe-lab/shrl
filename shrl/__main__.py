@@ -8,7 +8,7 @@ import shrl.handlers
 DESC = """The SHARED data regularity checker and load helper."""
 
 parser = argparse.ArgumentParser(prog="shrl", description=DESC)
-parser.set_defaults(handler=parser.print_help)
+parser.set_defaults(handler=lambda _: parser.print_help())
 parser.add_argument(
     "--verbose", "-v", action="store_true", help="Enable verbose logging"
 )
