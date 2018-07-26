@@ -107,7 +107,7 @@ def treatment_data(
             prev_regimen_id=get_reg_id("prev_regimen"),
             pprev_regimen_id=get_reg_id("pprev_regimen"),
             response=cln.values.get("response"),
-            notes=cln.values.get("treatment_notes")
+            notes=cln.values.get("treatment_notes"),
         )
 
     return [tx_data(cln) for cln in c.clinical]
