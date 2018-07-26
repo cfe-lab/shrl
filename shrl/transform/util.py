@@ -85,9 +85,6 @@ class RegimenRegistry(object):
                 dao.execute(incl_stm, incl_values)
 
 
-T = ty.TypeVar("T", bound="SequenceRegistry")
-
-
 class SequenceRegistry(object):
 
     SEQ_FILE_FORMAT = "fasta"
@@ -159,9 +156,7 @@ class SequenceRegistry(object):
         self.add_seqs(seqs)
 
     @classmethod
-    def file_seqs(
-        cls: ty.Type[T], filename: str
-    ) -> ty.Iterable[seqrecord.SeqRecord]:
+    def file_seqs(cls, filename: str) -> ty.Iterable[seqrecord.SeqRecord]:
         "Load sequences from a file"
         with open(filename) as inf:
             seqs = list(seqio.parse(inf, cls.SEQ_FILE_FORMAT))
@@ -169,14 +164,14 @@ class SequenceRegistry(object):
 
     @classmethod
     def from_seqs(
-        cls: ty.Type[T], seqs: ty.Iterable[seqrecord.SeqRecord]
-    ) -> T:
+        cls, seqs: ty.Iterable[seqrecord.SeqRecord]
+    ) -> "SequenceRegistry":
         repository = cls()
         repository.add_seqs(seqs)
         return repository
 
     @classmethod
-    def from_files(cls: ty.Type[T], filenames: ty.Iterable[str]) -> T:
+    def from_files(cls, filenames: ty.Iterable[str]) -> "SequenceRegistry":
         repository = cls()
         for filename in filenames:
             repository.add_file(filename)
