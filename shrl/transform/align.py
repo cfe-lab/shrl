@@ -3,11 +3,12 @@ import uuid
 
 import pynucamino as pn
 
+import shared_schema.reference_sequences as refseqs
+
 from . import entities
 
 
-def profile_name(gt: str, subgt: ty.Optional[str]) -> str:
-    "Choose a nucamino alignment profile based on genotype and subgenotype"
+def check_gt_and_subgt(gt: str, subgt: ty.Optional[str]) -> None:
     GENOTYPES = {"1", "2", "3", "4", "5", "6"}
     if gt not in GENOTYPES:
         raise ValueError(f"Invalid Genotype: {gt}")
@@ -15,6 +16,11 @@ def profile_name(gt: str, subgt: ty.Optional[str]) -> str:
         if type(subgt) is not str or len(subgt) > 1:
             msg = f"Invalid subgenotype: {subgt}"
             raise ValueError(msg)
+
+
+def profile_name(gt: str, subgt: ty.Optional[str]) -> str:
+    "Choose a nucamino alignment profile based on genotype and subgenotype"
+    check_gt_and_subgt(gt, subgt)
     if gt == "1":
         if subgt == "b":
             return "hcv1b"
@@ -22,6 +28,27 @@ def profile_name(gt: str, subgt: ty.Optional[str]) -> str:
             return "hcv1a"
     else:
         return f"hcv{gt}"
+
+
+RefseqKey = ty.Tuple[str, ty.Optional[str], refseqs.Gene]
+REFSEQ_INDEX: ty.Dict[RefseqKey, uuid.UUID] = {
+    (rs.genotype, rs.subgenotype, rs.gene): rs.shared_id for rs in refseqs.SEQS
+}
+
+
+def refseq_id(gt: str, subgt: ty.Optional[str], gene_src: str) -> uuid.UUID:
+    check_gt_and_subgt(gt, subgt)
+    gene = refseqs.Gene(gene_src.lower())
+    key: ty.Tuple[str, ty.Optional[str], refseqs.Gene]
+    if gt == "1":
+        if subgt == "b":
+            key = ("1", "b", gene)
+        else:
+            key = ("1", "a", gene)
+    else:
+        key = (gt, None, gene)
+    refseq = REFSEQ_INDEX[key]
+    return refseq
 
 
 def ensure_fasta_formatted(seq_str: str, hdr: str = "Reformatted") -> str:
@@ -37,10 +64,11 @@ def alignment(
 ) -> entities.Alignment:
     nt_start = aln_report["FirstNA"]
     nt_end = aln_report["LastAA"]
+    ref_seq = refseq_id(sequence.genotype, sequence.subgenotype, gene)
     return entities.Alignment(
         id=uuid.uuid4(),
         sequence_id=sequence.id,
-        reference_id=None,  # This gets set when writing to the database
+        reference_id=ref_seq,
         nt_start=nt_start,
         nt_end=nt_end,
         gene=gene,
