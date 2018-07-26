@@ -146,14 +146,14 @@ class TestBasicConversionFunctions(unittest.TestCase):
         expected_ltfu = entities.LossToFollowUp(
             case_id=case_id, ltfu_year=2018, died=False, cod=None
         )
-        constructed_ltfu = convert.loss_to_followup(
+        constructed_ltfu = convert.make_loss_to_followup(
             case_id=case_id, c=EXAMPLE_CASE
         )
         self.assertEqual(constructed_ltfu, expected_ltfu)
 
     def test_behavior_data(self):
         case_id = uuid.uuid4()
-        constructed_behavior_data = convert.behavior_data(
+        constructed_behavior_data = convert.make_behavior_data(
             case_id=case_id, c=EXAMPLE_CASE
         )
         flds = ("sex_ori", "idu", "idu_recent", "ndu", "ndu_recent", "prison")
@@ -165,7 +165,7 @@ class TestBasicConversionFunctions(unittest.TestCase):
 
     def test_clinical_data(self):
         case_id = uuid.uuid4()
-        constructed_clinical_data = convert.clinical_data(
+        constructed_clinical_data = convert.make_clinical_data(
             case_id, c=EXAMPLE_CASE
         )
         self.assertEqual(
@@ -214,7 +214,7 @@ class TestBasicConversionFunctions(unittest.TestCase):
     def test_treatment_data(self):
         case_id = uuid.uuid4()
         rreg = util.RegimenRegistry()
-        constructed_treatment_data = convert.treatment_data(
+        constructed_treatment_data = convert.make_treatment_data(
             rreg, case_id, EXAMPLE_CASE
         )
         expected_regimen = ss_regimens.cannonical.from_string("DAKLINZA")
