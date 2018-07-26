@@ -1,4 +1,5 @@
 import logging
+import pathlib
 import typing as ty
 import uuid
 
@@ -151,12 +152,14 @@ class SequenceRegistry(object):
             seq_id = self.id_function(seq)
             self._seq_store[seq_id] = seq
 
-    def add_file(self, filename: str) -> None:
+    def add_file(self, filename: ty.Union[str, pathlib.Path]) -> None:
         seqs = self.file_seqs(filename)
         self.add_seqs(seqs)
 
     @classmethod
-    def file_seqs(cls, filename: str) -> ty.Iterable[seqrecord.SeqRecord]:
+    def file_seqs(
+        cls, filename: ty.Union[str, pathlib.Path]
+    ) -> ty.Iterable[seqrecord.SeqRecord]:
         "Load sequences from a file"
         with open(filename) as inf:
             seqs = list(seqio.parse(inf, cls.SEQ_FILE_FORMAT))
@@ -171,7 +174,9 @@ class SequenceRegistry(object):
         return repository
 
     @classmethod
-    def from_files(cls, filenames: ty.Iterable[str]) -> "SequenceRegistry":
+    def from_files(
+        cls, filenames: ty.Iterable[ty.Union[str, pathlib.Path]]
+    ) -> "SequenceRegistry":
         repository = cls()
         for filename in filenames:
             repository.add_file(filename)
