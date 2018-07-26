@@ -81,7 +81,7 @@ class Reference(ty.NamedTuple):
     author: str
     title: str
     journal: ty.Optional[str]
-    url: ty.Optional[str]  # TODO(nknight): make this a urllib ParseResult?
+    url: ty.Optional[str]
     publication_dt: str
     pubmed_id: ty.Optional[str]
 
