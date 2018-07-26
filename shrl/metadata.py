@@ -266,13 +266,13 @@ class StudyDataDatabaseHandle:
             self.dao.insert_or_check_identical(
                 "sourcestudy", self.data.source_study._asdict()
             )
-            source_study_id = self.data.source_study.name
+            source_study_name = self.data.source_study.name
             for ref in self.data.references:
                 self.dao.insert_or_check_identical("reference", ref._asdict())
                 self.dao.insert_or_check_identical(
                     "sourcestudyreference",
                     {
-                        "sourcestudy_id": source_study_id,
+                        "sourcestudy_name": source_study_name,
                         "reference_id": ref.id,
                     },
                 )
@@ -284,6 +284,6 @@ class StudyDataDatabaseHandle:
                     "sourcestudycollaborator",
                     {
                         "collaborator_id": collaborator.id,
-                        "study_name": source_study_id,
+                        "study_name": source_study_name,
                     },
                 )

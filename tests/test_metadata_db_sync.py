@@ -164,7 +164,7 @@ class TestCreatingNewEntities(unittest.TestCase):
 
         assert_item_created(
             "sourcestudyreference",
-            sourcestudy_id=EX_SOURCESTUDY.name,
+            sourcestudy_name=EX_SOURCESTUDY.name,
             reference_id=EX_REFERENCE.id,
         )
         assert_item_created(

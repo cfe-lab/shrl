@@ -17,12 +17,12 @@ class TransformationException(exceptions.ShrlException):
 
 
 def make_case(
-    person_id: uuid.UUID, study_id: uuid.UUID, c: case.Case
+    person_id: uuid.UUID, study_name: str, c: case.Case
 ) -> entities.Case:
     return entities.Case(
         id=uuid.uuid4(),
         person_id=person_id,
-        study_id=study_id,
+        study_name=str,
         country=c.participant["country"],
         study_participant_id=c.participant["id"],
     )
@@ -218,10 +218,10 @@ def case_entities(
     seq_registry: util.SequenceRegistry,
     rreg: util.RegimenRegistry,
     c: case.Case,
-    study_id: uuid.UUID,
+    study_name: str,
 ) -> EntitiesMapping:
     person = make_person(c)
-    case_entity = make_case(person.id, study_id, c)
+    case_entity = make_case(person.id, study_name, c)
     case_id = case_entity.id
     ltfu = make_loss_to_followup(case_id, c)
     behavior_data = make_behavior_data(case_id, c)
