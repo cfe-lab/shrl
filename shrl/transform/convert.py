@@ -22,7 +22,7 @@ def make_case(
     return entities.Case(
         id=uuid.uuid4(),
         person_id=person_id,
-        study_name=str,
+        study_name=study_name,
         country=c.participant["country"],
         study_participant_id=c.participant["id"],
     )
