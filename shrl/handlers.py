@@ -1,4 +1,4 @@
-"""Functions that perform high-level tasks"""
+"""Functions that perform CLI tasks (load, check, report)"""
 import argparse
 import logging
 import os
@@ -8,6 +8,7 @@ import sys
 import textwrap
 import typing as ty
 
+import shared_schema.dao
 import shrl.case
 import shrl.io
 import shrl.metadata
@@ -17,7 +18,135 @@ import shrl.transform
 log = logging.getLogger(__name__)
 
 
-def init_sequence_registry(
+def check(args: argparse.Namespace) -> None:
+    "Check that a data directory is formatted as expected"
+    # Exhaust the entity iterator to make sure everything is actually loaded
+    log.info("Performing format check")
+    base_dir = pathlib.Path(args.directory)
+    rreg = shrl.transform.RegimenRegistry()
+    sreg = _init_sequence_registry(base_dir)
+    study_data = _init_meta(args)
+    entity_sets = _load_entities(
+        args, rreg=rreg, sreg=sreg, study_data=study_data
+    )
+    for entity_set in entity_sets:
+        for entities in entity_set.values():
+            for entity in entities:
+                pass
+    log.info("All rows loaded successfully")
+
+
+def report(args: argparse.Namespace) -> None:
+    ...
+
+
+def load(args: argparse.Namespace) -> None:
+    db_url = args.database
+    if not db_url:
+        _halt_with("Missing database url")
+
+    base_dir = pathlib.Path(args.directory)
+    if not base_dir:
+        _halt_with(f"Invlaid data directory: {args.directory}")
+
+    study_data = _init_meta(args)
+    if study_data is None:
+        _halt_with("Study metadata is required for loading data")
+        return  # Lets mypy know that study_data is not None hereafter.
+
+    dao = shared_schema.dao.DAO(db_url)
+    if args.init_db:
+        dao.init_db()
+    if args.load_regimens:
+        dao.load_standard_regimens()
+
+    rreg = shrl.transform.RegimenRegistry.init_from_dao(dao)
+    sreg = _init_sequence_registry(base_dir)
+
+    # Force evaluation of the entity sets so that the regimen registry is
+    # populated before we start inserting case entities. This is necessary
+    # because case entities depend on the entities from the registry.
+    entity_sets = list(
+        _load_entities(args, rreg=rreg, sreg=sreg, study_data=study_data)
+    )
+
+    db_connection = dao.engine.connect()
+
+    with db_connection.begin() as trn:
+        try:
+            _save_entities(
+                entity_sets=entity_sets,
+                sreg=sreg,
+                rreg=rreg,
+                dao=dao,
+                study_data=study_data,
+            )
+        except Exception as e:
+            log.error(e)
+            trn.rollback()
+    db_connection.close()
+
+
+EntitySet = ty.Dict[str, ty.List[ty.NamedTuple]]
+
+
+def _load_entities(
+    args: argparse.Namespace,
+    rreg: shrl.transform.RegimenRegistry,
+    sreg: shrl.transform.SequenceRegistry,
+    study_data: ty.Optional[shrl.metadata.StudyData],
+) -> ty.Iterable[EntitySet]:
+    if study_data is not None:
+        study_name = study_data.source_study.name
+    else:
+        study_name = secrets.token_hex()
+        log.info(f"Using dummy study_name: {study_name}")
+    base_dir = pathlib.Path(args.directory)
+    participants_file = base_dir / "participants.csv"
+    if not participants_file.is_file():
+        _halt_with(f"{participants_file} isn't a file")
+    csv_source = shrl.io.CsvSource.from_filepath(participants_file)
+    log.info("Loading Rows")
+    loaded_rows = list(shrl.row.load_rows(csv_source))
+    cases = shrl.case.cases(loaded_rows)
+    for case in cases:
+        yield shrl.transform.case_entities(sreg, rreg, case, study_name)
+
+
+def _save_entities(
+    entity_sets: ty.Iterable[EntitySet],
+    rreg: shrl.transform.RegimenRegistry,
+    sreg: shrl.transform.SequenceRegistry,
+    dao: shared_schema.dao.DAO,
+    study_data: shrl.metadata.StudyData,
+) -> None:
+
+    # Create Collaborator, SourceStudy, and References
+    meta_handle = shrl.metadata.StudyDataDatabaseHandle(study_data, dao)
+    meta_handle.check_existing()
+    meta_handle.create_new()
+
+    # Create Regimens and RegimenDrugInclusions
+    rreg.sync_to_dao(dao)
+
+    # Create case entities
+    for ents in entity_sets:
+        dao.insert("person", _as_items(ents["Person"]))
+        dao.insert("case", _as_items(ents["Case"]))
+
+
+def _as_items(
+    entities: ty.List[ty.NamedTuple]
+) -> ty.List[ty.Dict[str, ty.Any]]:
+    return [t._asdict() for t in entities]
+
+
+def _halt_with(msg: str) -> None:
+    log.error(msg)
+    sys.exit(1)
+
+
+def _init_sequence_registry(
     base_path: pathlib.Path
 ) -> shrl.transform.SequenceRegistry:
     seq_dir = base_path / "sequences"
@@ -31,48 +160,13 @@ def init_sequence_registry(
     return shrl.transform.SequenceRegistry.from_files(filepaths)
 
 
-EntitySet = ty.Dict[str, ty.List[ty.NamedTuple]]
-
-
-def _load_entities(args: argparse.Namespace) -> ty.Iterable[EntitySet]:
-    metadata: ty.Optional[shrl.metadata.StudyData]
+def _init_meta(
+    args: argparse.Namespace
+) -> ty.Optional[shrl.metadata.StudyData]:
+    study_data: ty.Optional[shrl.metadata.StudyData]
     if args.with_metadata is not None:
-        log.info(f"Loading study data from {args.with_metadata}")
-        metadata = shrl.metadata.parse(args.with_metadata)
-        study_name = metadata.source_study.name
+        study_data = shrl.metadata.parse(args.with_metadata)
     else:
-        study_name = secrets.token_hex()
-        log.info(f"Using dummy study_name: {study_name}")
-        metadata = None
-    base_dir = pathlib.Path(args.directory)
-    participants_file = base_dir / "participants.csv"
-    if not participants_file.is_file():
-        log.error(f"{participants_file} isn't a file")
-        sys.exit(1)
-    rreg = shrl.transform.RegimenRegistry()
-    sreg = init_sequence_registry(base_dir)
-    csv_source = shrl.io.CsvSource.from_filepath(participants_file)
-    log.info("Loading Rows")
-    loaded_rows = list(shrl.row.load_rows(csv_source))
-    cases = shrl.case.cases(loaded_rows)
-    for case in cases:
-        yield shrl.transform.case_entities(sreg, rreg, case, study_name)
-    log.info("All rows loaded successfully")
-
-
-def check(args: argparse.Namespace) -> None:
-    "Check that a data directory is formatted as expected"
-    # Exhaust the entity iterator to make sure everything is actually loaded
-    log.info("Performing format check")
-    for entity_set in _load_entities(args):
-        for entities in entity_set.values():
-            for entity in entities:
-                pass
-
-
-def report(args: argparse.Namespace) -> None:
-    ...
-
-
-def load(args: argparse.Namespace) -> None:
-    ...
+        log.info("No metadata provided")
+        study_data = None
+    return study_data
