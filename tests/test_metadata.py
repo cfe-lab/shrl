@@ -1,4 +1,5 @@
 import configparser
+import datetime
 import textwrap
 import unittest
 import uuid
@@ -143,7 +144,7 @@ class TestParseReferences(unittest.TestCase):
                 "author": "A",
                 "title": "B",
                 "journal": "C",
-                "publication_dt": "2016-01-01",
+                "publication_dt": datetime.date(2016, 1, 1),
                 "pubmed_id": "0",
             },
             {
@@ -151,7 +152,7 @@ class TestParseReferences(unittest.TestCase):
                 "title": "Y",
                 "journal": "Z",
                 "url": "https://journalclub.website/X/Y/Z",
-                "publication_dt": "1996-10-24",
+                "publication_dt": datetime.date(1996, 10, 24),
             },
         ]
         self.assertEqual(
