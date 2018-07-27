@@ -29,9 +29,12 @@ def make_case(
 
 
 def make_person(c: case.Case) -> entities.Person:
+    sex_enum = c.participant["sex"]
+    assert isinstance(sex_enum, enum.Enum)
+    sex = sex_enum.name
     return entities.Person(
         id=uuid.uuid4(),
-        sex=c.participant["sex"],
+        sex=sex,
         ethnicity=c.participant["ethnicity"],
         year_of_birth=c.participant["year_of_birth"],
     )
