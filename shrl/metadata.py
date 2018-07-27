@@ -21,7 +21,7 @@ id = A unique ID (for linking to an existing Reference in the database)
 author = The reference's author
 title = The reference's title
 journal = The journal where this reference was published
-publication_dt = The reference's date of publication
+publication_dt = The reference's date of publication (YYYY-MM-DD)
 url = A URL where this reference can be accessed
 pubmed_id = If applicable, the reference's PubMed ID
 ```
@@ -32,6 +32,7 @@ Collaborator, and with any references provided in the metadata file.
 """
 
 import configparser
+import datetime
 import logging
 import typing as ty
 import uuid
@@ -82,7 +83,7 @@ class Reference(ty.NamedTuple):
     title: str
     journal: ty.Optional[str]
     url: ty.Optional[str]
-    publication_dt: str
+    publication_dt: ty.Optional[datetime.date]
     pubmed_id: ty.Optional[str]
 
 
@@ -152,13 +153,21 @@ def references(parser: configparser.ConfigParser) -> ty.List[Reference]:
             ref_id = uuid.uuid4()
         else:
             ref_id = uuid.UUID(raw_args.get("id"))
+        publication_dt_src = raw_args.get("publication_dt")
+        if publication_dt_src is not None:
+            date_fmt = "%Y-%m-%d"
+            dt = datetime.datetime.strptime(publication_dt_src, date_fmt)
+            pub_date = dt.date()
+        else:
+            pub_date = None
+
         reference = Reference(
             id=ref_id,
             author=raw_args["author"],
             title=raw_args["title"],
             journal=raw_args.get("journal"),
             url=raw_args.get("url"),
-            publication_dt=raw_args["publication_dt"],
+            publication_dt=pub_date,
             pubmed_id=raw_args.get("pubmed_id"),
         )
         result.append(reference)
