@@ -1,3 +1,4 @@
+import tempfile
 import unittest
 import uuid
 
@@ -31,9 +32,15 @@ EX_STUDYDATA = metadata.StudyData(
 )
 
 
+def tmp_dao():
+    db_file = tempfile.NamedTemporaryFile()
+    db_url = f"sqlite:///{db_file.name}"
+    return shared_schema.dao.DAO(db_url)
+
+
 class TestConsistencyWithExistingEntities(unittest.TestCase):
     def setUp(self):
-        self.dao = shared_schema.dao.DAO("sqlite:///:memory:")
+        self.dao = tmp_dao()
         self.dao.init_db()
         self.dao.insert("reference", EX_REFERENCE._asdict())
         self.dao.insert("sourcestudy", EX_SOURCESTUDY._asdict())
@@ -98,13 +105,13 @@ class TestConsistencyWithExistingEntities(unittest.TestCase):
 
 class TestCreatingNewEntities(unittest.TestCase):
     def setUp(self):
-        self.dao = shared_schema.dao.DAO("sqlite:///:memory:")
+        self.dao = tmp_dao()
         self.dao.init_db()
 
     def assert_created_and_flds_equal(self, item, table, match_pred, flds):
-        retrieved = self.dao.execute(
-            table.select().where(match_pred)
-        ).fetchone()
+        retrieved = next(
+            self.dao.query(table.select().where(match_pred)), None
+        )
         self.assertIsNotNone(retrieved, "Missing value from database")
         for fld in flds:
             self.assertEqual(getattr(item, fld), retrieved[fld])
@@ -155,7 +162,7 @@ class TestCreatingNewEntities(unittest.TestCase):
             ]
             pred = sql.and_(*preds)
             query = tbl.select().where(pred)
-            result = self.dao.execute(query).fetchone()
+            result = next(self.dao.query(query), None)
             prop_msgs = (f"{key}={val}" for key, val in properties.items())
             self.assertIsNotNone(
                 result,
@@ -195,14 +202,13 @@ class TestCreatingNewEntities(unittest.TestCase):
 
 class TestSyncingToDatabase(unittest.TestCase):
     def setUp(self):
-        self.dao = shared_schema.dao.DAO("sqlite:///:memory:")
+        self.dao = tmp_dao()
         self.dao.init_db()
 
     def assert_created_and_flds_equal(self, item, table, match_pred):
         flds = item._fields
-        retrieved = self.dao.execute(
-            table.select().where(match_pred)
-        ).fetchone()
+        result = self.dao.query(table.select().where(match_pred))
+        retrieved = next(result, None)
         self.assertIsNotNone(retrieved, "Missing value from database")
         for fld in flds:
             self.assertEqual(getattr(item, fld), retrieved[fld])

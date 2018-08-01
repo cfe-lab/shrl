@@ -232,9 +232,7 @@ class StudyDataDatabaseHandle:
             )
         for item in items:
             match_val = getattr(item, match_fld)
-            existing = self.dao.execute(
-                tbl.select(col == match_val)
-            ).fetchone()
+            existing = next(self.dao.query(tbl.select(col == match_val)), None)
             if existing is not None:
                 mismatch_flds = self.db_mismatch_fields(item, existing, flds)
                 if mismatch_flds:

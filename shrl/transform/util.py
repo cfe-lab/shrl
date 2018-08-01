@@ -46,7 +46,7 @@ class RegimenRegistry(object):
         log.info("Loading regimens from DAO")
         registry = cls()
         reg_qry = dao.regimen.select()
-        regs = dao.execute(reg_qry).fetchall()
+        regs = dao.query(reg_qry)
         for reg in regs:
             uid = reg.id
             regimen = ss_regimens.cannonical.from_dao(dao, uid)
@@ -74,7 +74,7 @@ class RegimenRegistry(object):
             if db_regimen is None:
                 log.info("Creating new regimen: {reg}".format(reg=regimen))
                 create_stm = dao.regimen.insert().values(id=reg_id, name=None)
-                dao.execute(create_stm)
+                dao.command(create_stm)
                 incl_values = list(
                     {"regimen_id": reg_id, **incl._asdict()}
                     for incl in ss_regimens.cannonical.drug_inclusions(regimen)
@@ -83,7 +83,7 @@ class RegimenRegistry(object):
                 incl_stm = dao.regimendruginclusion.insert().values(
                     **{nm: sql.bindparam(nm) for nm in incl_keys}
                 )
-                dao.execute(incl_stm, incl_values)
+                dao.command(incl_stm, incl_values)
 
 
 class SequenceRegistry(object):

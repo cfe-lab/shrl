@@ -1,6 +1,7 @@
 """Test that the object for tracking, retrieving, and syncing cannonical
 treatment regimens to the database while loading new records works as expected.
 """
+import tempfile
 import unittest
 import uuid
 
@@ -35,22 +36,28 @@ class TestRegimenRegistry(unittest.TestCase):
 
 
 class TestRegimenInitialization(unittest.TestCase):
+    def setUp(self):
+        self.db_file = tempfile.NamedTemporaryFile()
+        db_url = f"sqlite:///{self.db_file.name}"
+        self.dao = ss_dao.DAO(db_url)
+        self.dao.init_db()
+
     def test_initialize_from_dao(self):
-        dao = ss_dao.DAO("sqlite:///:memory:")
-        dao.init_db()
         reg_id = uuid.uuid4()
-        reg_expr = dao.regimen.insert().values(id=reg_id, name="Test Regimen")
-        dao.execute(reg_expr)
-        reg_incl_expr = dao.regimendruginclusion.insert().values(
+        reg_expr = self.dao.regimen.insert().values(
+            id=reg_id, name="Test Regimen"
+        )
+        self.dao.command(reg_expr)
+        reg_incl_expr = self.dao.regimendruginclusion.insert().values(
             regimen_id=reg_id,
             medication_id="BOC",
             dose=100,
             frequency="QD",
             duration=7,
         )
-        dao.execute(reg_incl_expr)
+        self.dao.command(reg_incl_expr)
 
-        registry = util.RegimenRegistry.init_from_dao(dao)
+        registry = util.RegimenRegistry.init_from_dao(self.dao)
 
         regimen_src = "100mg BOC QD 1 week"
         regimen_data = ss_reg.cannonical.from_string(regimen_src)
@@ -60,7 +67,9 @@ class TestRegimenInitialization(unittest.TestCase):
 class TestRegmimenRegistrySyncing(unittest.TestCase):
     def setUp(self):
         self.registry = util.RegimenRegistry()
-        self.dao = ss_dao.DAO("sqlite:///:memory:")
+        self.db_file = tempfile.NamedTemporaryFile()
+        db_url = f"sqlite:///{self.db_file.name}"
+        self.dao = ss_dao.DAO(db_url)
         self.dao.init_db()
 
     def test_basic_sync(self):
@@ -78,7 +87,7 @@ class TestRegmimenRegistrySyncing(unittest.TestCase):
         ).where(
             self.dao.regimen.c.id == self.dao.regimendruginclusion.c.regimen_id
         )
-        rows = self.dao.execute(reg_qry).fetchall()
+        rows = list(self.dao.query(reg_qry))
         self.assertEqual(len(rows), 1, "Expected one drug inclusion record")
         row = next(iter(rows))
         cases = [
