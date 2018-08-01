@@ -16,6 +16,18 @@ class TransformationException(exceptions.ShrlException):
     pass
 
 
+def _get_enum_name(
+    e_member: ty.Optional[field.FieldType], upcase: bool = False
+) -> ty.Optional[str]:
+    if e_member is None:
+        return None
+    assert isinstance(e_member, enum.Enum)
+    if upcase:
+        return str(e_member.name).upper()
+    else:
+        return str(e_member.name)
+
+
 def make_case(
     person_id: uuid.UUID, study_name: str, c: case.Case
 ) -> entities.Case:
@@ -45,7 +57,7 @@ def make_loss_to_followup(
 ) -> entities.LossToFollowUp:
     ltfu_year = c.participant["ltfu_year"]
     died = c.participant["died"]
-    cod = c.participant["cod"]
+    cod = _get_enum_name(c.participant["cod"])
 
     return entities.LossToFollowUp(
         case_id=case_id, ltfu_year=ltfu_year, died=died, cod=cod
@@ -58,11 +70,12 @@ def make_behavior_data(
     id = uuid.uuid4()
 
     bhv = c.behavior
+    sex_ori = _get_enum_name(bhv.get("sex_ori"))
 
     return entities.BehaviorData(
         id=id,
         case_id=case_id,
-        sex_ori=bhv.get("sex_ori"),
+        sex_ori=sex_ori,
         idu=bhv.get("idu"),
         idu_recent=bhv.get("idu_recent"),
         ndu=bhv.get("ndu"),
@@ -110,8 +123,10 @@ def make_clinical_data(
 
     def parse_one(src: case.Clinical) -> ty.Optional[entities.ClinicalData]:
         kwargs = {fld: src.values[fld] for fld in flds}
+        kwargs["kind"] = _get_enum_name(kwargs.get("kind"))
+        kwargs["il28b"] = _get_enum_name(kwargs.get("il28b"), upcase=True)
         if all(v is None for v in kwargs.values()):
-            return None
+            return None  # Skip empty records
         return entities.ClinicalData(
             id=uuid.uuid4(), case_id=case_id, **kwargs
         )
@@ -146,17 +161,11 @@ def make_treatment_data(
             regimen_id=get_reg_id("regimen"),
             prev_regimen_id=get_reg_id("prev_regimen"),
             pprev_regimen_id=get_reg_id("pprev_regimen"),
-            response=cln.values.get("response"),
+            response=_get_enum_name(cln.values.get("response"), upcase=True),
             notes=cln.values.get("treatment_notes"),
         )
 
     return [tx_data(cln) for cln in c.clinical]
-
-
-def _get_enum_name(e_member: ty.Optional[field.FieldType]) -> str:
-    assert e_member is not None
-    assert isinstance(e_member, enum.Enum)
-    return str(e_member.name)
 
 
 def make_isolate_entities(
@@ -175,7 +184,7 @@ def make_isolate_entities(
         clinical_isolate = entities.ClinicalIsolate(
             isolate_id=isolate.id,
             case_id=case_id,
-            sample_kind=str(clinical.values["kind"]),
+            sample_kind=_get_enum_name(clinical.values["kind"]),
         )
         results["ClinicalIsolate"].append(clinical_isolate)
         for seq in clinical.sequences:
@@ -188,8 +197,12 @@ def make_isolate_entities(
             raw_seq: seqrecord.SeqRecord = seq_registry.get(seq_id)
             sub_gt_src = seq.get("subegnotype", None)
             sub_gt = str(sub_gt_src) if sub_gt_src is not None else None
-            gene_str = _get_enum_name(seq["gene"]).upper()
+            gene_str = _get_enum_name(seq["gene"], upcase=True)
+            msg = f"Missing gene label for case:\n{c}"
+            assert gene_str is not None, msg
             genotype_str = _get_enum_name(seq["genotype"])
+            msg = f"Missing genotype information for case:\n{c}"
+            assert genotype_str is not None, msg
             sequence = entities.Sequence(
                 id=uuid.uuid4(),
                 isolate_id=isolate.id,
