@@ -131,8 +131,20 @@ def _save_entities(
 
     # Create case entities
     for ents in entity_sets:
+        # This is written out explicitly because the order of insertions
+        # matters; records referred to by foreign keys must be created before
+        # their dependents.
         dao.insert("person", _as_items(ents["Person"]))
         dao.insert("case", _as_items(ents["Case"]))
+        dao.insert("losstofollowup", _as_items(ents["LossToFollowUp"]))
+        dao.insert("behaviordata", _as_items(ents["BehaviorData"]))
+        dao.insert("clinicaldata", _as_items(ents["ClinicalData"]))
+        dao.insert("treatmentdata", _as_items(ents["TreatmentData"]))
+        dao.insert("isolate", _as_items(ents["Isolate"]))
+        dao.insert("clinicalisolate", _as_items(ents["ClinicalIsolate"]))
+        dao.insert("sequence", _as_items(ents["Sequence"]))
+        dao.insert("alignment", _as_items(ents["Alignment"]))
+        dao.insert("substitution", _as_items(ents["Substitution"]))
 
 
 def _as_items(
