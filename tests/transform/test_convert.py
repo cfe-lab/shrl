@@ -1,9 +1,24 @@
+import enum
 import unittest
 import uuid
 
 from shared_schema import regimens as ss_regimens
 from shrl import case
 from shrl.transform import convert, entities, util
+
+
+class ExampleResponse(enum.Enum):
+    bt = 0
+
+
+class ExampleKind(enum.Enum):
+    bl = 0
+    eot = 1
+
+
+class ExampleIL28B(enum.Enum):
+    tc = 0
+
 
 EXAMPLE_CASE = case.Case(
     participant={
@@ -28,7 +43,7 @@ EXAMPLE_CASE = case.Case(
     clinical=[
         case.Clinical(
             values={
-                "kind": "bl",
+                "kind": ExampleKind.bl,
                 "hiv": False,
                 "hbv": False,
                 "ost": True,
@@ -53,7 +68,7 @@ EXAMPLE_CASE = case.Case(
                 "plate": 6,
                 "CD4": None,
                 "crp": None,
-                "il28b": "TC",
+                "il28b": ExampleIL28B.tc,
                 "asc": None,
                 "var_bleed": True,
                 "hep_car": False,
@@ -73,7 +88,7 @@ EXAMPLE_CASE = case.Case(
                     "genotype": "1",
                     "subgenotype": "a",
                     "strain": None,
-                    "seq_id": "example-seq-id",
+                    "seq_id": "-seq-id",
                     "gene": "ns5a",
                     "seq_method": "sanger",
                     "cutoff": 15,
@@ -84,7 +99,7 @@ EXAMPLE_CASE = case.Case(
         case.Clinical(
             sequences=[],
             values={
-                "kind": "eot",
+                "kind": ExampleKind.eot,
                 "hiv": False,
                 "hbv": False,
                 "ost": True,
@@ -109,7 +124,7 @@ EXAMPLE_CASE = case.Case(
                 "plate": 6,
                 "CD4": None,
                 "crp": None,
-                "il28b": "TC",
+                "il28b": ExampleIL28B.tc,
                 "asc": None,
                 "var_bleed": True,
                 "hep_car": False,
@@ -120,7 +135,7 @@ EXAMPLE_CASE = case.Case(
                 "regimen": "DAKLINZA",
                 "prev_regimen": "EPCLUSA",
                 "pprev_regimen": None,
-                "response": "bt",
+                "response": ExampleResponse.bt,
                 "treatment_notes": "On second thought, not so good.",
             },
         ),
@@ -136,7 +151,10 @@ class TestBasicConversionFunctions(unittest.TestCase):
             val1 = src[fld]
             val2 = getattr(trn, fld)
             msg = "Expected '{fld}' field to be equal".format(fld=fld)
-            self.assertEqual(val1, val2, msg)
+            if not isinstance(val1, enum.Enum):
+                self.assertEqual(val1, val2, msg)
+            else:
+                self.assertEqual(val1.name.lower(), val2.lower())
 
         for fld in flds:
             compare_field(fld)
