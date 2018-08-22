@@ -11,7 +11,7 @@ script:
   - flake8 shrl test
   - mypy shrl
   - shrl --with-metadata test_data/metadata.conf check test_data
-  - shrl --with-metadata test_data/metadata.conf load --init-db --load-regimens "sqlite:///./tmpdb.sqlite"
+  - shrl --with-metadata test_data/metadata.conf load --init-db --load-regimens test_data "sqlite:///./tmpdb.sqlite"
 after_script:
     - rm -f tmpdb.sqlite
 notifications:
