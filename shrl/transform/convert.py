@@ -251,6 +251,6 @@ def case_entities(
         "TreatmentData": make_treatment_data(rreg, case_id, c),
     }
     isolate_entities = make_isolate_entities(case_id, seq_registry, c)
-    assert all(k not in results for k in isolate_entities)
+    assert all(k not in results for k in isolate_entities), "No clobbering"
     results.update(isolate_entities)
     return results
