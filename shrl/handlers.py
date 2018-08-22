@@ -9,6 +9,8 @@ import textwrap
 import typing as ty
 
 import shared_schema.dao
+import shared_schema.data
+import shared_schema.tables
 import shrl.case
 import shrl.io
 import shrl.metadata
@@ -16,6 +18,8 @@ import shrl.row
 import shrl.transform
 
 log = logging.getLogger(__name__)
+
+SCHEMA_DATA = shared_schema.data.schema_data
 
 
 def check(args: argparse.Namespace) -> None:
@@ -29,6 +33,7 @@ def check(args: argparse.Namespace) -> None:
     entity_sets = _load_entities(
         args, rreg=rreg, sreg=sreg, study_data=study_data
     )
+    # Exhaust any iterators
     for entity_set in entity_sets:
         for entities in entity_set.values():
             for entity in entities:
@@ -84,10 +89,52 @@ def load(args: argparse.Namespace) -> None:
         except Exception as e:
             log.error(e)
             trn.rollback()
-    db_connection.close()
+            raise e
+        finally:
+            db_connection.close()
 
 
 EntitySet = ty.Dict[str, ty.List[ty.NamedTuple]]
+
+
+class EntityManager:
+    def __init__(self, dao: shared_schema.dao.DAO, eset: EntitySet) -> None:
+        self.dao = dao
+        self.eset = eset
+
+    def insert_entity(self, entityname: str) -> None:
+        entities = self.eset[entityname]
+        if len(entities) != 1:
+            raise ValueError(
+                "Expected a single entity; got {}".format(len(entities))
+            )
+        entity = entities[0]
+        tablename = entityname.lower()
+        self.dao.insert(tablename, entity._asdict())
+
+    def insert_entities_if_not_empty(self, entityname: str) -> None:
+        """Insert any entities that have non-null 'value fields'
+
+        A 'value field' is any field that's not a foreign key or a UUID
+
+        Note that this doesn't guarantee that the insertion will succeed. For
+        example, fields might have invalid types, or required fields might be
+        missing.
+        """
+        ent_def = SCHEMA_DATA.get_entity(entityname)
+        value_fields: ty.List[shared_schema.tables.Field] = [
+            fld.name
+            for fld in ent_def.fields
+            if ("foreign key" not in fld.type)
+            and (fld.name != "id")
+            and (not fld.name == "uuid")
+        ]
+        entities = self.eset[entityname]
+        tablename = entityname.lower()
+        for ent in entities:
+            item = ent._asdict()
+            if any(item.get(fldname) for fldname in value_fields):
+                self.dao.insert(tablename, item)
 
 
 def _load_entities(
@@ -129,28 +176,23 @@ def _save_entities(
     # Create Regimens and RegimenDrugInclusions
     rreg.sync_to_dao(dao)
 
-    # Create case entities
+    # Create Case and ClinicalIsolate Entities
     for ents in entity_sets:
         # This is written out explicitly because the order of insertions
         # matters; records referred to by foreign keys must be created before
         # their dependents.
-        dao.insert("person", _as_items(ents["Person"]))
-        dao.insert("case", _as_items(ents["Case"]))
-        dao.insert("losstofollowup", _as_items(ents["LossToFollowUp"]))
-        dao.insert("behaviordata", _as_items(ents["BehaviorData"]))
-        dao.insert("clinicaldata", _as_items(ents["ClinicalData"]))
-        dao.insert("treatmentdata", _as_items(ents["TreatmentData"]))
-        dao.insert("isolate", _as_items(ents["Isolate"]))
-        dao.insert("clinicalisolate", _as_items(ents["ClinicalIsolate"]))
-        dao.insert("sequence", _as_items(ents["Sequence"]))
-        dao.insert("alignment", _as_items(ents["Alignment"]))
-        dao.insert("substitution", _as_items(ents["Substitution"]))
-
-
-def _as_items(
-    entities: ty.List[ty.NamedTuple]
-) -> ty.List[ty.Dict[str, ty.Any]]:
-    return [t._asdict() for t in entities]
+        emanager = EntityManager(dao, ents)
+        emanager.insert_entity("Person")
+        emanager.insert_entity("Case")
+        emanager.insert_entities_if_not_empty("LossToFollowUp")
+        emanager.insert_entities_if_not_empty("BehaviorData")
+        emanager.insert_entities_if_not_empty("ClinicalData")
+        emanager.insert_entities_if_not_empty("TreatmentData")
+        emanager.insert_entities_if_not_empty("Isolate")
+        emanager.insert_entities_if_not_empty("ClinicalIsolate")
+        emanager.insert_entities_if_not_empty("Sequence")
+        emanager.insert_entities_if_not_empty("Alignment")
+        emanager.insert_entities_if_not_empty("Substitution")
 
 
 def _halt_with(msg: str) -> None:
