@@ -104,9 +104,10 @@ def substitution(
 def substitutions(
     alignment: entities.Alignment, alignment_report: ty.Any
 ) -> ty.List[entities.Substitution]:
-    assert len(alignment_report["FrameShifts"]) == 0
     subs: ty.List[entities.Substitution] = []
     for mtn in alignment_report["Mutations"]:
+        subs.append(substitution(alignment, mtn))
+    for mtn in alignment_report["FrameShifts"]:
         subs.append(substitution(alignment, mtn))
     return subs
 
