@@ -72,7 +72,7 @@ class Collaborator(ty.NamedTuple):
 class SourceStudy(ty.NamedTuple):
 
     name: str
-    start_year: int
+    start_year: ty.Optional[int]
     end_year: ty.Optional[int]
     notes: ty.Optional[str]
 
@@ -118,6 +118,13 @@ def collaborators(parser: configparser.ConfigParser) -> ty.List[Collaborator]:
     return result
 
 
+def as_maybe_int(src: ty.Optional[str]) -> ty.Optional[int]:
+    if src is not None:
+        return int(src)
+    else:
+        return None
+
+
 def source_study(parser: configparser.ConfigParser) -> SourceStudy:
     if "sourcestudy" not in parser:
         raise MetadataError(
@@ -129,11 +136,13 @@ def source_study(parser: configparser.ConfigParser) -> SourceStudy:
         notes = None
     else:
         notes = raw_notes.strip()
+    start_year = raw_args.get("start_year")
+    end_year = raw_args.get("end_year")
     try:
         return SourceStudy(
             name=raw_args["name"],
-            start_year=int(raw_args["start_year"]),
-            end_year=int(raw_args["end_year"]),
+            start_year=as_maybe_int(start_year),
+            end_year=as_maybe_int(end_year),
             notes=notes,
         )
     except ValueError:
