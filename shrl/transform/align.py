@@ -133,7 +133,5 @@ def make_entities(
         aln = alignment(sequence, gene, report)
         subs = substitutions(aln, report)
         aln_entities["Alignment"].append(aln)
-        for sub in subs:
-            aln_entities["Substitution"].append(sub)
-
+        aln_entities["Substitution"].extend(subs)
     return aln_entities
