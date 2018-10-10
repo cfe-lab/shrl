@@ -41,10 +41,6 @@ def check(args: argparse.Namespace) -> None:
     log.info("All rows loaded successfully")
 
 
-def report(args: argparse.Namespace) -> None:
-    ...
-
-
 def load(args: argparse.Namespace) -> None:
     db_url = args.database
     if not db_url:

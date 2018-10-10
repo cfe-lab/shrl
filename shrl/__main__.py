@@ -29,12 +29,6 @@ check = subparsers.add_parser(
 check.add_argument("directory", help="Directory to search for datafiles")
 check.set_defaults(handler=shrl.handlers.check)
 
-report = subparsers.add_parser(
-    name="report", help="Statistics on the contents of data files"
-)
-report.add_argument("directory", help="Directory to search for datafiles")
-report.set_defaults(handler=shrl.handlers.report)
-
 load = subparsers.add_parser(
     name="load", help="Load submitted data into a database"
 )
