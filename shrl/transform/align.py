@@ -6,6 +6,7 @@ import pynucamino as pn
 import shared_schema.reference_sequences as refseqs
 
 from . import entities
+from shrl import report
 
 
 def check_gt_and_subgt(gt: str, subgt: ty.Optional[str]) -> None:
@@ -86,6 +87,9 @@ def substitution(
     }
     if mtn["IsInsertion"]:
         kind = "insertion"
+        print("inser")
+        if "InsertedAminoAcidsText" not in mtn:
+            breakpoint()
         specific_fields["insertion"] = mtn["InsertedAminoAcidsText"]
     elif mtn["IsDeletion"]:
         kind = "deletion"
@@ -101,15 +105,25 @@ def substitution(
     )
 
 
+FrameShiftPosition = ty.NewType("FrameShiftPosition", int)
+
+
+class FrameshiftData(ty.NamedTuple):
+    gene: str
+    frameshifts: ty.List[FrameShiftPosition]
+
+
 def substitutions(
     alignment: entities.Alignment, alignment_report: ty.Any
-) -> ty.List[entities.Substitution]:
-    subs: ty.List[entities.Substitution] = []
-    for mtn in alignment_report["Mutations"]:
-        subs.append(substitution(alignment, mtn))
-    for mtn in alignment_report["FrameShifts"]:
-        subs.append(substitution(alignment, mtn))
-    return subs
+) -> ty.Union[ty.List[entities.Substitution], ty.List[FrameShiftPosition]]:
+    fs_list = alignment_report["FrameShifts"]
+    if len(fs_list) > 0:
+        return [FrameShiftPosition(fs["Position"]) for fs in fs_list]
+    else:
+        return [
+            substitution(alignment, mtn)
+            for mtn in alignment_report["Mutations"]
+        ]
 
 
 AlignmentEntities = ty.Dict[str, ty.List[ty.NamedTuple]]
@@ -129,9 +143,14 @@ def make_entities(
     for gene in genes:
         reports: ty.Any = aln_data[gene]
         assert len(reports) == 1
-        report = reports[0]["Report"]
-        aln = alignment(sequence, gene, report)
-        subs = substitutions(aln, report)
-        aln_entities["Alignment"].append(aln)
-        aln_entities["Substitution"].extend(subs)
+        aln_report = reports[0]["Report"]
+        aln = alignment(sequence, gene, aln_report)
+        subs = substitutions(aln, aln_report)
+        if len(subs) == 0 or isinstance(subs[0], entities.Substitution):
+            aln_entities["Alignment"].append(aln)
+            for sub in subs:
+                assert isinstance(sub, entities.Substitution)
+                aln_entities["Substitution"].append(sub)
+        else:
+            report.frameshift(gene=gene, positions=[int(pos) for pos in subs])
     return aln_entities
