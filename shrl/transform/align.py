@@ -87,9 +87,6 @@ def substitution(
     }
     if mtn["IsInsertion"]:
         kind = "insertion"
-        print("inser")
-        if "InsertedAminoAcidsText" not in mtn:
-            breakpoint()
         specific_fields["insertion"] = mtn["InsertedAminoAcidsText"]
     elif mtn["IsDeletion"]:
         kind = "deletion"
