@@ -14,6 +14,7 @@ import shared_schema.tables
 import shrl.case
 import shrl.io
 import shrl.metadata
+import shrl.report
 import shrl.row
 import shrl.transform
 
@@ -39,6 +40,7 @@ def check(args: argparse.Namespace) -> None:
             for entity in entities:
                 pass
     log.info("All rows loaded successfully")
+    shrl.report.print_report()
 
 
 def load(args: argparse.Namespace) -> None:
@@ -153,7 +155,9 @@ def _load_entities(
     loaded_rows = list(shrl.row.load_rows(csv_source))
     cases = shrl.case.cases(loaded_rows)
     for case in cases:
-        yield shrl.transform.case_entities(sreg, rreg, case, study_name)
+        entities = shrl.transform.case_entities(sreg, rreg, case, study_name)
+        shrl.report.count_entities(entities)
+        yield entities
 
 
 def _save_entities(

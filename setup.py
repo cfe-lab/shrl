@@ -13,6 +13,7 @@ install_requires = [
     "pynucamino >=0.1.0, <1.0",
     "shared-schema",
     "SQLAlchemy >=1.1.14, <2.0",
+    "tabulate >= 0.8",
 ]
 
 setuptools.setup(
