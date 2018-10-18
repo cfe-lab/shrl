@@ -98,6 +98,7 @@ class SequenceRegistry(object):
         """
         self._seq_store: ty.Dict[str, seqrecord.SeqRecord] = dict()
         self._hash_store: ty.Set[int] = set()
+        self._id_store: ty.Set[str] = set()
 
     def __contains__(self, seq_id: str) -> bool:
         return seq_id in self._seq_store
@@ -142,6 +143,10 @@ class SequenceRegistry(object):
         hash_value = self.sequence_hash(sequence)
         if hash_value in self._hash_store:
             msg = "Duplicate sequence: name='{}'".format(sequence.name)
+            raise ValueError(msg)
+        seq_id = self.id_function(sequence)
+        if seq_id in self._seq_store:
+            msg = "Duplicate sequence id: id='{}'".format(seq_id)
             raise ValueError(msg)
         self._hash_store.add(hash_value)
 

@@ -1,3 +1,4 @@
+import collections
 import random
 import string
 import unittest
@@ -40,6 +41,16 @@ class TestSequenceRegistry(unittest.TestCase):
                 self.registry.get(seq_id),
                 "Retrieved seq doesn't match original",
             )
+
+    def test_duplicate_ids_cause_errors(self):
+        Record = collections.namedtuple("Record", ["id", "name", "seq"])
+        dup_records = [
+            Record(id="record1", name="record1", seq="gattaca"),
+            Record(id="record1", name="record2", seq="cataaga"),
+        ]
+        registry = util.SequenceRegistry()
+        with self.assertRaises(ValueError):
+            registry.add_seqs(dup_records)
 
 
 class StringIdRegistry(util.SequenceRegistry):
