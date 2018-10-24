@@ -222,12 +222,21 @@ def make_isolate_entities(
                 raw_nt_seq=str(raw_seq.seq),
                 notes=seq["seq_notes"],
             )
-            aln_entities = align.make_entities(
-                sequence=sequence,
-                genotype=genotype_str,
-                subgenotype=sub_gt,
-                genes=[gene_str],
-            )
+            try:
+                aln_entities = align.make_entities(
+                    sequence=sequence,
+                    genotype=genotype_str,
+                    subgenotype=sub_gt,
+                    genes=[gene_str],
+                )
+            except ValueError:
+                import pprint
+
+                msg = "Misalignment while parsing case:\n{}".format(
+                    pprint.pformat(c)
+                )
+                raise ValueError(msg)
+
             for kind, ents in aln_entities.items():
                 results[kind].extend(ents)
             results["Sequence"].append(sequence)

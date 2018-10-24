@@ -141,6 +141,13 @@ def make_entities(
         reports: ty.Any = aln_data[gene]
         assert len(reports) == 1
         aln_report = reports[0]["Report"]
+        if aln_report is None:
+            import pprint
+
+            msg = "Unexpected Nucamino alginment output:\n{}".format(
+                pprint.pformat(aln_data)
+            )
+            raise ValueError(msg)
         aln = alignment(sequence, gene, aln_report)
         subs = substitutions(aln, aln_report)
         if len(subs) == 0 or isinstance(subs[0], entities.Substitution):
