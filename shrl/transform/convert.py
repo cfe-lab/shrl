@@ -40,13 +40,21 @@ def make_case(
     )
 
 
+def get_sex(c: case.Case) -> ty.Optional[enum.Enum]:
+    ...
+    sex_val = c.participant["sex"]
+    if sex_val is None:
+        return None
+    assert isinstance(sex_val, enum.Enum)
+    return sex_val
+
+
 def make_person(c: case.Case) -> entities.Person:
-    sex_enum = c.participant["sex"]
-    assert isinstance(sex_enum, enum.Enum)
-    sex = sex_enum.name
+    sex = get_sex(c)
+    sex_name = _get_enum_name(sex)
     return entities.Person(
         id=uuid.uuid4(),
-        sex=sex,
+        sex=sex_name,
         ethnicity=c.participant["ethnicity"],
         year_of_birth=c.participant["year_of_birth"],
     )
