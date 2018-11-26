@@ -204,7 +204,7 @@ class EnumField(BaseField):
         except KeyError:
             opts = ", ".join([e.name for e in self.target])  # type: ignore
             msg = f"Unexpected value {src} for enum {self.name} ({opts})"
-            raise FieldParsingError(loc, f"Unexpected value '{src}")
+            raise FieldParsingError(loc, f"Unexpected value '{src}'")
         except Exception as e:
             tmpl = "Unexpected exception trying to parse '{}' as {}"
             msg = tmpl.format(src, self.name)
