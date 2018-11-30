@@ -15,17 +15,13 @@ log = logging.getLogger(__name__)
 
 class RegimenRegistry(object):
     def __init__(self) -> None:
-        self._storage: ty.Dict[
-            int, ty.Tuple[uuid.UUID, ss_regimens.Regimen]
-        ] = dict()
+        self._storage: ty.Dict[int, ty.Tuple[uuid.UUID, ss_regimens.Regimen]] = dict()
 
     def __contains__(self, regimen: ss_regimens.Regimen) -> bool:
         return hash(regimen) in self._storage
 
     def add(
-        self,
-        regimen: ss_regimens.Regimen,
-        reg_id: ty.Optional[uuid.UUID] = None,
+        self, regimen: ss_regimens.Regimen, reg_id: ty.Optional[uuid.UUID] = None
     ) -> ty.Tuple[uuid.UUID, ss_regimens.Regimen]:
         reg_hash = hash(regimen)
         if reg_id is None:
@@ -33,9 +29,7 @@ class RegimenRegistry(object):
         self._storage[reg_hash] = (reg_id, regimen)
         return reg_id, regimen
 
-    def get(
-        self, regimen: ss_regimens
-    ) -> ty.Tuple[uuid.UUID, ss_regimens.Regimen]:
+    def get(self, regimen: ss_regimens) -> ty.Tuple[uuid.UUID, ss_regimens.Regimen]:
         return self._storage[hash(regimen)]
 
     def values(self) -> ty.Iterable[ty.Tuple[uuid.UUID, ss_regimens.Regimen]]:
@@ -171,9 +165,7 @@ class SequenceRegistry(object):
         return seqs
 
     @classmethod
-    def from_seqs(
-        cls, seqs: ty.Iterable[seqrecord.SeqRecord]
-    ) -> "SequenceRegistry":
+    def from_seqs(cls, seqs: ty.Iterable[seqrecord.SeqRecord]) -> "SequenceRegistry":
         repository = cls()
         repository.add_seqs(seqs)
         return repository
