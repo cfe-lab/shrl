@@ -207,7 +207,7 @@ class EnumField(BaseField):
             raise FieldParsingError(
                 loc, f"Unexpected value '{src}' for {self.name}"
             )
-        except Exception as e:
+        except Exception:  # noqa
             tmpl = "Unexpected exception trying to parse '{}' as {}"
             msg = tmpl.format(src, self.name)
             raise FieldParsingError(location=loc, msg=msg)
