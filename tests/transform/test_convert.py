@@ -17,7 +17,7 @@ class ExampleKind(enum.Enum):
 
 
 class ExampleIL28B(enum.Enum):
-    tc = 0
+    ct = 0
 
 
 EXAMPLE_CASE = case.Case(
@@ -68,7 +68,7 @@ EXAMPLE_CASE = case.Case(
                 "plate": 6,
                 "CD4": None,
                 "crp": None,
-                "il28b": ExampleIL28B.tc,
+                "il28b": ExampleIL28B.ct,
                 "asc": None,
                 "var_bleed": True,
                 "hep_car": False,
@@ -124,7 +124,7 @@ EXAMPLE_CASE = case.Case(
                 "plate": 6,
                 "CD4": None,
                 "crp": None,
-                "il28b": ExampleIL28B.tc,
+                "il28b": ExampleIL28B.ct,
                 "asc": None,
                 "var_bleed": True,
                 "hep_car": False,
