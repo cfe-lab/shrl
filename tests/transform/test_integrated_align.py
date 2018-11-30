@@ -1,8 +1,8 @@
-'''This module contains an integration test of the sequence aligner module. It
+"""This module contains an integration test of the sequence aligner module. It
 verifies that a sequence containing a substitution, an insertion, and a
 deletion is correctly characterized by the aligner and that the aligner's
 output is correctly parsed into the appropriate entities.
-'''
+"""
 import unittest
 
 from shrl.transform import align, entities
@@ -18,7 +18,7 @@ from shrl.transform import align, entities
 # 6461 a>c
 # 6658_6659 ins gag
 # 6858_6861 del
-RAW_SEQUENCE = '''
+RAW_SEQUENCE = """
 ACCACTCCATGCTCCGGTTCCTGGCTAAGGGACATCTGGGACTGGATATGCGAGGTGCTGAGCGACTTTAAGACCTGGC
 TGAAAGCCAAGCTCATGCCACAACTGCCTGGGATTCCCTTTGTGTCCTGCCAGCGCGGGTATAGGGGGGTCTGGCGAGG
 AGACGGCATTATGCACACTCGCTGCCACTGTGGAGCTGAGATCACTGGACATGTCAACAACGGGACGATGAGGATCGTC
@@ -37,7 +37,9 @@ ATCAACCCTATCTACTGCCTTGGCCGAGCTTGCCACCAAAAGTTTTGGCAGCTCCTCAACTTCCGGCATTACGGGCGAC
 AATACGACAACATCCTCTGAGCCCGCCCCTTCTGGCTGCCCCCCCGACTCCGACGTTGAGTCCTATTCTTCCATGCCCC
 CCCTGGAGGGGGAGCCTGGGGATCCGGATCTCAGCGACGGGTCATGGTCGACGGTCAGTAGTGGGGCCGACACGGAAGA
 TGTCGTGTGCTGCTCAATGTCTTATTC
-'''.strip().replace('\n', '')  # noqa
+""".strip().replace(
+    "\n", ""
+)  # noqa
 
 TEST_SEQUENCE = entities.Sequence(
     id=None,
@@ -65,30 +67,25 @@ class TestAlignIntegrated(unittest.TestCase):
             genes=["NS5A"],
         )
         self.assertEqual(
-            set(aligned_entities.keys()),
-            set(("Alignment", "Substitution")),
+            set(aligned_entities.keys()), set(("Alignment", "Substitution"))
         )
-        self.assertEqual(
-            len(aligned_entities["Alignment"]),
-            1,
-        )
-        self.assertEqual(
-            len(aligned_entities["Substitution"]),
-            3,
-        )
+        self.assertEqual(len(aligned_entities["Alignment"]), 1)
+        self.assertEqual(len(aligned_entities["Substitution"]), 3)
         sub1, sub2, sub3 = aligned_entities["Substitution"]
-        self.assertPairsEqual([
-            (sub1.kind, "simple"),
-            (sub1.position, 68),
-            (sub1.sub_aa, "N"),
-        ])
-        self.assertPairsEqual([
-            (sub2.kind, "insertion"),
-            (sub2.position, 135),
-            (sub2.insertion, "E"),
-        ])
-        self.assertPairsEqual([
-            (sub3.kind, "deletion"),
-            (sub3.position, 201),
-            (sub3.deletion_length, 1),
-        ])
+        self.assertPairsEqual(
+            [(sub1.kind, "simple"), (sub1.position, 68), (sub1.sub_aa, "N")]
+        )
+        self.assertPairsEqual(
+            [
+                (sub2.kind, "insertion"),
+                (sub2.position, 135),
+                (sub2.insertion, "E"),
+            ]
+        )
+        self.assertPairsEqual(
+            [
+                (sub3.kind, "deletion"),
+                (sub3.position, 201),
+                (sub3.deletion_length, 1),
+            ]
+        )

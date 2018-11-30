@@ -23,13 +23,19 @@ parser.add_argument(
 
 subparsers = parser.add_subparsers(title="commands")
 
-check = subparsers.add_parser(name="check", help="Check data files for consistency")
+check = subparsers.add_parser(
+    name="check", help="Check data files for consistency"
+)
 check.add_argument("directory", help="Directory to search for datafiles")
 check.set_defaults(handler=shrl.handlers.check)
 
-load = subparsers.add_parser(name="load", help="Load submitted data into a database")
+load = subparsers.add_parser(
+    name="load", help="Load submitted data into a database"
+)
 load.add_argument("directory", help="Directory to search for datafiles")
-load.add_argument("database", help="Database to load data into (as a database string)")
+load.add_argument(
+    "database", help="Database to load data into (as a database string)"
+)
 load.add_argument(
     "--init-db",
     action="store_true",

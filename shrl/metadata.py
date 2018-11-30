@@ -95,10 +95,14 @@ class StudyData(ty.NamedTuple):
 
 def collaborators(parser: configparser.ConfigParser) -> ty.List[Collaborator]:
     collab_sections = [
-        secname for secname in parser.sections() if secname.startswith("collaborator")
+        secname
+        for secname in parser.sections()
+        if secname.startswith("collaborator")
     ]
     if len(collab_sections) <= 0:
-        raise MetadataError("collaborator", "We need at least one collaborator section")
+        raise MetadataError(
+            "collaborator", "We need at least one collaborator section"
+        )
     result = []
     for section_name in collab_sections:
         raw_args = parser[section_name]
@@ -123,7 +127,9 @@ def as_maybe_int(src: ty.Optional[str]) -> ty.Optional[int]:
 
 def source_study(parser: configparser.ConfigParser) -> SourceStudy:
     if "sourcestudy" not in parser:
-        raise MetadataError("sourcestudy", "Missing required section 'sourcestudy'")
+        raise MetadataError(
+            "sourcestudy", "Missing required section 'sourcestudy'"
+        )
     raw_args = parser["sourcestudy"]
     raw_notes = raw_args["notes"]
     if raw_notes is None:
@@ -145,7 +151,9 @@ def source_study(parser: configparser.ConfigParser) -> SourceStudy:
 
 def references(parser: configparser.ConfigParser) -> ty.List[Reference]:
     reference_sections = (
-        secname for secname in parser.sections() if secname.startswith("reference")
+        secname
+        for secname in parser.sections()
+        if secname.startswith("reference")
     )
     result = []
     for secname in reference_sections:
@@ -177,11 +185,15 @@ def references(parser: configparser.ConfigParser) -> ty.List[Reference]:
 
 def extract(parser: configparser.ConfigParser) -> StudyData:
     if not parser.has_section("collaborator"):
-        raise MetadataError("collaborator", "Missing required section 'collaborator'")
+        raise MetadataError(
+            "collaborator", "Missing required section 'collaborator'"
+        )
     collab = collaborators(parser)
     sstudy = source_study(parser)
     refs = references(parser)
-    return StudyData(collaborators=collab, source_study=sstudy, references=refs)
+    return StudyData(
+        collaborators=collab, source_study=sstudy, references=refs
+    )
 
 
 def get_parser() -> configparser.ConfigParser:
@@ -233,7 +245,9 @@ class StudyDataDatabaseHandle:
             if existing is not None:
                 mismatch_flds = self.db_mismatch_fields(item, existing, flds)
                 if mismatch_flds:
-                    msg = "Fields don't match: {}".format(", ".join(mismatch_flds))
+                    msg = "Fields don't match: {}".format(
+                        ", ".join(mismatch_flds)
+                    )
                     raise DatabaseMismatchError(table_name, msg)
 
     def check_existing(self) -> None:
@@ -249,9 +263,19 @@ class StudyDataDatabaseHandle:
             "reference",
             self.data.references,
             "id",
-            ["id", "author", "title", "journal", "url", "publication_dt", "pubmed_id"],
+            [
+                "id",
+                "author",
+                "title",
+                "journal",
+                "url",
+                "publication_dt",
+                "pubmed_id",
+            ],
         )
-        self.db_items_match("collaborator", self.data.collaborators, "id", ["name"])
+        self.db_items_match(
+            "collaborator", self.data.collaborators, "id", ["name"]
+        )
 
     def create_new(self) -> None:
         with self.dao.engine.begin():
@@ -263,7 +287,10 @@ class StudyDataDatabaseHandle:
                 self.dao.insert_or_check_identical("reference", ref._asdict())
                 self.dao.insert_or_check_identical(
                     "sourcestudyreference",
-                    {"sourcestudy_name": source_study_name, "reference_id": ref.id},
+                    {
+                        "sourcestudy_name": source_study_name,
+                        "reference_id": ref.id,
+                    },
                 )
             for collaborator in self.data.collaborators:
                 self.dao.insert_or_check_identical(

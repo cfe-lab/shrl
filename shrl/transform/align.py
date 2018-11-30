@@ -117,7 +117,10 @@ def substitutions(
     if len(fs_list) > 0:
         return [FrameShiftPosition(fs["Position"]) for fs in fs_list]
     else:
-        return [substitution(alignment, mtn) for mtn in alignment_report["Mutations"]]
+        return [
+            substitution(alignment, mtn)
+            for mtn in alignment_report["Mutations"]
+        ]
 
 
 AlignmentEntities = ty.Dict[str, ty.List[ty.NamedTuple]]

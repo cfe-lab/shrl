@@ -33,7 +33,9 @@ Report = ty.Mapping[str, Table]
 def compile() -> Report:
     return {
         "Frameshifts": [fs._asdict() for fs in _frameshift_sequences],
-        "Entities": [{"Entity Name": k, "Count": v} for k, v in _entity_counts.items()],
+        "Entities": [
+            {"Entity Name": k, "Count": v} for k, v in _entity_counts.items()
+        ],
     }
 
 

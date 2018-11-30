@@ -28,7 +28,9 @@ def _get_enum_name(
         return str(e_member.name)
 
 
-def make_case(person_id: uuid.UUID, study_name: str, c: case.Case) -> entities.Case:
+def make_case(
+    person_id: uuid.UUID, study_name: str, c: case.Case
+) -> entities.Case:
     return entities.Case(
         id=uuid.uuid4(),
         person_id=person_id,
@@ -58,7 +60,9 @@ def make_person(c: case.Case) -> entities.Person:
     )
 
 
-def make_loss_to_followup(case_id: uuid.UUID, c: case.Case) -> entities.LossToFollowUp:
+def make_loss_to_followup(
+    case_id: uuid.UUID, c: case.Case
+) -> entities.LossToFollowUp:
     ltfu_year = c.participant["ltfu_year"]
     died = c.participant["died"]
     cod = _get_enum_name(c.participant["cod"])
@@ -68,7 +72,9 @@ def make_loss_to_followup(case_id: uuid.UUID, c: case.Case) -> entities.LossToFo
     )
 
 
-def make_behavior_data(case_id: uuid.UUID, c: case.Case) -> entities.BehaviorData:
+def make_behavior_data(
+    case_id: uuid.UUID, c: case.Case
+) -> entities.BehaviorData:
     id = uuid.uuid4()
 
     bhv = c.behavior
@@ -129,7 +135,9 @@ def make_clinical_data(
         kwargs["il28b"] = _get_enum_name(kwargs.get("il28b"), upcase=True)
         if all(v is None for v in kwargs.values()):
             return None  # Skip empty records
-        return entities.ClinicalData(id=uuid.uuid4(), case_id=case_id, **kwargs)
+        return entities.ClinicalData(
+            id=uuid.uuid4(), case_id=case_id, **kwargs
+        )
 
     return [
         parse_one(clinical)
@@ -224,7 +232,9 @@ def make_isolate_entities(
             except ValueError:
                 import pprint
 
-                msg = "Misalignment while parsing case:\n{}".format(pprint.pformat(c))
+                msg = "Misalignment while parsing case:\n{}".format(
+                    pprint.pformat(c)
+                )
                 raise ValueError(msg)
 
             for kind, ents in aln_entities.items():

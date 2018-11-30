@@ -33,7 +33,9 @@ class LoadedField(ty.NamedTuple):
     def _parse(self) -> ty.Optional[FieldType]:
         return self.fld.parse(self.src, self.loc)
 
-    def _parse_or(self, default: ty.Optional[FieldType]) -> ty.Optional[FieldType]:
+    def _parse_or(
+        self, default: ty.Optional[FieldType]
+    ) -> ty.Optional[FieldType]:
         try:
             return self._parse()
         except FieldParsingError:
@@ -71,7 +73,9 @@ class BaseField:
             else:
                 raise err
 
-    def load(self, src: str, loc: shrl.exceptions.SourceLocation) -> LoadedField:
+    def load(
+        self, src: str, loc: shrl.exceptions.SourceLocation
+    ) -> LoadedField:
         return LoadedField(src=src, fld=self, loc=loc)
 
     def parse_type(
@@ -88,7 +92,9 @@ class BaseField:
         if type(self) is not type(other):
             return False
         else:
-            return all([self.name == other.name, self.required == other.required])
+            return all(
+                [self.name == other.name, self.required == other.required]
+            )
 
 
 class BoolField(BaseField):
@@ -144,11 +150,15 @@ class NumberField(BaseField):
             return float(src)
         except Exception:
             pass
-        raise FieldParsingError(loc, f"Unexpected error parsing numeric field: '{src}'")
+        raise FieldParsingError(
+            loc, f"Unexpected error parsing numeric field: '{src}'"
+        )
 
 
 class StringField(BaseField):
-    def handle_blank(self, loc: shrl.exceptions.SourceLocation) -> ty.Optional[str]:
+    def handle_blank(
+        self, loc: shrl.exceptions.SourceLocation
+    ) -> ty.Optional[str]:
         if self.required:
             raise FieldParsingError(loc, "Unexpected blank field")
         else:
@@ -183,7 +193,9 @@ class EnumField(BaseField):
 
     # This function returns an enum that's constructed at runtime. I'm not sure
     # how to represent that with `typing`.
-    def parse_type(self, src: str, loc: shrl.exceptions.SourceLocation) -> enum.Enum:
+    def parse_type(
+        self, src: str, loc: shrl.exceptions.SourceLocation
+    ) -> enum.Enum:
         # NOTE(nknight): typing doesn't support iterating enums yet.
         try:
             normed_src = src.lower().strip()
@@ -192,7 +204,9 @@ class EnumField(BaseField):
         except KeyError:
             opts = ", ".join([e.name for e in self.target])  # type: ignore
             msg = f"Unexpected value {src} for enum {self.name} ({opts})"
-            raise FieldParsingError(loc, f"Unexpected value '{src}' for {self.name}")
+            raise FieldParsingError(
+                loc, f"Unexpected value '{src}' for {self.name}"
+            )
         except Exception as e:
             tmpl = "Unexpected exception trying to parse '{}' as {}"
             msg = tmpl.format(src, self.name)

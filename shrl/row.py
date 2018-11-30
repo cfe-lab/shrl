@@ -86,7 +86,9 @@ def _schema_field_as_field(scm_field: scheme.Field) -> shrl.field.BaseField:
                 options=[opt.lower() for opt in options],
             )
         if shrl_type is shrl.field.ForeignKeyField:
-            target = shared_schema.util.foreign_key_target(scm_field.schema_type)
+            target = shared_schema.util.foreign_key_target(
+                scm_field.schema_type
+            )
             return shrl.field.ForeignKeyField(
                 name=scm_field.name, required=scm_field.required, target=target
             )
@@ -94,7 +96,9 @@ def _schema_field_as_field(scm_field: scheme.Field) -> shrl.field.BaseField:
     raise SchemaDefinitionError(f"Can't convert schema field: {scm_field}")
 
 
-submission_spec = RowSpec(fields=[_schema_field_as_field(f) for f in scheme.fields])
+submission_spec = RowSpec(
+    fields=[_schema_field_as_field(f) for f in scheme.fields]
+)
 
 
 def load_rows(source: shrl.io.CsvSource) -> ty.Iterable[LoadedRow]:

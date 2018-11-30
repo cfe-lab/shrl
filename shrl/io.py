@@ -27,13 +27,17 @@ class CsvSource(ty.NamedTuple):
     reader: csv.DictReader
 
     @classmethod
-    def from_file(cls, raw_rows: ty.Iterator[str], filename: str) -> "CsvSource":
+    def from_file(
+        cls, raw_rows: ty.Iterator[str], filename: str
+    ) -> "CsvSource":
         rows = _downcase_csv_headers(raw_rows)
         reader = csv.DictReader(rows)
         return cls(filename=filename, reader=reader)
 
     @classmethod
-    def from_filepath(cls, filepath: ty.Union[str, pathlib.Path]) -> "CsvSource":
+    def from_filepath(
+        cls, filepath: ty.Union[str, pathlib.Path]
+    ) -> "CsvSource":
         filepath = pathlib.Path(filepath)
         if not filepath.is_file():
             msg = f"No file at '{filepath}'"

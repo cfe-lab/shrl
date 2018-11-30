@@ -31,7 +31,9 @@ def check(args: argparse.Namespace) -> None:
     rreg = shrl.transform.RegimenRegistry()
     sreg = _init_sequence_registry(base_dir)
     study_data = _init_meta(args)
-    entity_sets = _load_entities(args, rreg=rreg, sreg=sreg, study_data=study_data)
+    entity_sets = _load_entities(
+        args, rreg=rreg, sreg=sreg, study_data=study_data
+    )
     # Exhaust any iterators
     for entity_set in entity_sets:
         for entities in entity_set.values():
@@ -101,7 +103,9 @@ class EntityManager:
     def insert_entity(self, entityname: str) -> None:
         entities = self.eset[entityname]
         if len(entities) != 1:
-            raise ValueError("Expected a single entity; got {}".format(len(entities)))
+            raise ValueError(
+                "Expected a single entity; got {}".format(len(entities))
+            )
         entity = entities[0]
         tablename = entityname.lower()
         self.dao.insert(tablename, entity._asdict())
@@ -196,17 +200,23 @@ def _halt_with(msg: str) -> None:
     sys.exit(1)
 
 
-def _init_sequence_registry(base_path: pathlib.Path) -> shrl.transform.SequenceRegistry:
+def _init_sequence_registry(
+    base_path: pathlib.Path
+) -> shrl.transform.SequenceRegistry:
     seq_dir = base_path / "sequences"
     log.info(f"Loading sequences from {seq_dir}")
     files = os.listdir(seq_dir)
-    filepaths = [seq_dir / fname for fname in files if fname.lower().endswith("fasta")]
+    filepaths = [
+        seq_dir / fname for fname in files if fname.lower().endswith("fasta")
+    ]
     file_list = textwrap.indent("\n".join(str(p) for p in filepaths), " - ")
     log.info(f"Sequence files: \n{file_list}")
     return shrl.transform.SequenceRegistry.from_files(filepaths)
 
 
-def _init_meta(args: argparse.Namespace) -> ty.Optional[shrl.metadata.StudyData]:
+def _init_meta(
+    args: argparse.Namespace
+) -> ty.Optional[shrl.metadata.StudyData]:
     study_data: ty.Optional[shrl.metadata.StudyData]
     if args.with_metadata is not None:
         study_data = shrl.metadata.parse(args.with_metadata)

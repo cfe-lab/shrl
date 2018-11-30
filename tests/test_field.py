@@ -3,16 +3,13 @@ import unittest
 import shrl.exceptions
 from shrl import field
 
-fake_loc = shrl.exceptions.SourceLocation(
-    filename="fake_file.csv",
-    line=0,
-)
+fake_loc = shrl.exceptions.SourceLocation(filename="fake_file.csv", line=0)
 
 
 class BaseFieldTest(unittest.TestCase):
     def setUp(self):
         super(BaseFieldTest, self).setUp()
-        self.fld = self.fld_class(name='test field', required=True)
+        self.fld = self.fld_class(name="test field", required=True)
 
 
 class TestBoolField(BaseFieldTest):
@@ -20,34 +17,31 @@ class TestBoolField(BaseFieldTest):
     fld_class = field.BoolField
 
     def test_parse_true(self):
-        true_cases = ['True', 'true', 'TRUE', '1', 'y', 't', 'yes']
+        true_cases = ["True", "true", "TRUE", "1", "y", "t", "yes"]
         for case in true_cases:
             parsed = self.fld.parse(case, fake_loc)
             self.assertTrue(
-                parsed,
-                "Expected '{}' to be parsed as 'True'".format(case),
+                parsed, "Expected '{}' to be parsed as 'True'".format(case)
             )
 
     def test_parse_false(self):
-        false_cases = ['0', 'false', 'False', "FALSE", 'n', 'f', 'no']
+        false_cases = ["0", "false", "False", "FALSE", "n", "f", "no"]
         for case in false_cases:
             parsed = self.fld.parse(case, fake_loc)
             self.assertFalse(
-                parsed,
-                "Expected '{}' to be parsed as 'False'".format(case),
+                parsed, "Expected '{}' to be parsed as 'False'".format(case)
             )
 
     def test_parse_none(self):
-        none_cases = ['none', 'null']
+        none_cases = ["none", "null"]
         for case in none_cases:
             parsed = self.fld.parse(case, fake_loc)
             self.assertIsNone(
-                parsed,
-                "Expected '{}' to be parsed as 'None'".format(case),
+                parsed, "Expected '{}' to be parsed as 'None'".format(case)
             )
 
     def test_parse_err(self):
-        err_cases = ['asdf', '2', 'tru ue', None]
+        err_cases = ["asdf", "2", "tru ue", None]
         for case in err_cases:
             msg = "Expected '{}' to not parse as Boolean".format(case)
             with self.assertRaises(field.FieldParsingError, msg=msg):
@@ -76,7 +70,7 @@ class TestNumberField(BaseFieldTest):
     fld_class = field.NumberField
 
     def test_parse_success(self):
-        ok_cases = ['1', '-2', '3.14', '-2.2', '1.3e12']
+        ok_cases = ["1", "-2", "3.14", "-2.2", "1.3e12"]
         for case in ok_cases:
             parsed = self.fld.parse(case, None)
             matches = type(parsed) is int or type(parsed) is float
@@ -84,7 +78,7 @@ class TestNumberField(BaseFieldTest):
             self.assertTrue(matches, msg)
 
     def test_parse_error(self):
-        err_cases = ['a', '1.b', '2e1.2', '']
+        err_cases = ["a", "1.b", "2e1.2", ""]
         for case in err_cases:
             msg = "Expected '{}' to not parse as a number".format(case)
             with self.assertRaises(field.FieldParsingError, msg=msg):
@@ -96,14 +90,14 @@ class TestStringField(BaseFieldTest):
     fld_class = field.StringField
 
     def test_parse_success(self):
-        ok_cases = ['asdf', 'jkl', 'semicolon']
+        ok_cases = ["asdf", "jkl", "semicolon"]
         for case in ok_cases:
             parsed = self.fld.parse(case, loc=None)
             self.assertEqual(parsed, case)
 
     def test_parse_no_blanks(self):
-        fld = field.StringField(name='unrequired')
-        self.assertEqual(fld.parse('', loc=None), None)
+        fld = field.StringField(name="unrequired")
+        self.assertEqual(fld.parse("", loc=None), None)
 
 
 class TestEnumField(BaseFieldTest):
@@ -112,24 +106,20 @@ class TestEnumField(BaseFieldTest):
         pass
 
     def test_parse_success(self):
-        options = ('a', 'b', 'c')
+        options = ("a", "b", "c")
         fld = field.EnumField(
-            name='test field',
-            required=True,
-            options=options,
+            name="test field", required=True, options=options
         )
-        ok_cases = ['a', 'B', ' C', ' A ']
+        ok_cases = ["a", "B", " C", " A "]
         for case in ok_cases:
             fld.parse(case, fake_loc)
 
     def test_parse_failured(self):
-        options = ('a', 'b', 'c')
+        options = ("a", "b", "c")
         fld = field.EnumField(
-            name='test field',
-            required=True,
-            options=options,
+            name="test field", required=True, options=options
         )
-        fail_cases = ['d', 3, None, [], {1: 2}, {1, 2, 3}]
+        fail_cases = ["d", 3, None, [], {1: 2}, {1, 2, 3}]
         for case in fail_cases:
             msg = "Expected '{}' to not parse as enum".format(case)
             with self.assertRaises(field.FieldParsingError, msg=msg):
@@ -138,54 +128,34 @@ class TestEnumField(BaseFieldTest):
 
 class TestFieldEquality(unittest.TestCase):
     def test_equal_fields_are_equal(self):
-        fld1 = field.NumberField(
-            name='fld',
-            required=True,
-        )
-        fld2 = field.NumberField(
-            name='fld',
-            required=True,
-        )
+        fld1 = field.NumberField(name="fld", required=True)
+        fld2 = field.NumberField(name="fld", required=True)
         self.assertFalse(fld1 is fld2)
         self.assertEqual(fld1, fld2)
         self.assertFalse(fld1 != fld2)
 
     def test_inequal_field_aren_not_equal(self):
-        fld1 = field.NumberField(
-            name='fld',
-            required=True,
-        )
-        fld2 = field.NumberField(
-            name='other fld',
-            required=True,
-        )
+        fld1 = field.NumberField(name="fld", required=True)
+        fld2 = field.NumberField(name="other fld", required=True)
         self.assertNotEqual(fld1, fld2)
 
 
 class TestForeignKeyField(unittest.TestCase):
     def test_equal_fields_are_equal(self):
         fld1 = field.ForeignKeyField(
-            name='a',
-            required=True,
-            target='a_target',
+            name="a", required=True, target="a_target"
         )
         fld2 = field.ForeignKeyField(
-            name='a',
-            required=True,
-            target='a_target',
+            name="a", required=True, target="a_target"
         )
         self.assertEqual(fld1, fld2)
 
     def test_nonequal_fields_are_not_equal(self):
         fld1 = field.ForeignKeyField(
-            name='a',
-            required=True,
-            target='a_target',
+            name="a", required=True, target="a_target"
         )
         fld2 = field.ForeignKeyField(
-            name='b',
-            required=True,
-            target='b_target',
+            name="b", required=True, target="b_target"
         )
         self.assertNotEqual(fld1, fld2)
 
