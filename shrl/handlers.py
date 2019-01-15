@@ -128,7 +128,8 @@ class EntityManager:
             )
         entity = entities[0]
         tablename = entityname.lower()
-        self.dao.insert(tablename, entity._asdict())
+        item = convert_enum_names(entity._asdict())
+        self.dao.insert(tablename, item)
 
     def insert_entities_if_not_empty(self, entityname: str) -> None:
         """Insert any entities that have non-null 'value fields'
@@ -150,8 +151,7 @@ class EntityManager:
         entities = self.eset[entityname]
         tablename = entityname.lower()
         for ent in entities:
-            item = dict(ent._asdict().items())
-            item = convert_enum_names(item)
+            item = convert_enum_names(ent._asdict())
             if any(item.get(fldname) for fldname in value_fields):
                 self.dao.insert(tablename, item)
 
