@@ -1,5 +1,6 @@
 """Functions that perform CLI tasks (load, check, report)"""
 import argparse
+import enum
 import logging
 import os
 import pathlib
@@ -95,6 +96,25 @@ def load(args: argparse.Namespace) -> None:
 EntitySet = ty.Dict[str, ty.List[ty.NamedTuple]]
 
 
+T = ty.TypeVar("T")
+U = ty.TypeVar("U")
+
+
+def convert_enum_names(dct: ty.Dict[str, ty.Any]) -> ty.Dict[str, ty.Any]:
+    """Replace enum.Enum instances with their names
+
+    The `shared_schema` module uses Enum names instead of values in the
+    database schema, so trying to insert Enum value (which are ususally
+    integers) won't work.
+    """
+    enum_flds = [k for k, v in dct.items() if isinstance(v, enum.Enum)]
+    for fld in enum_flds:
+        v = dct.pop(fld)
+        assert isinstance(v, enum.Enum)
+        dct[fld] = v.name
+    return dct
+
+
 class EntityManager:
     def __init__(self, dao: shared_schema.dao.DAO, eset: EntitySet) -> None:
         self.dao = dao
@@ -130,7 +150,8 @@ class EntityManager:
         entities = self.eset[entityname]
         tablename = entityname.lower()
         for ent in entities:
-            item = ent._asdict()
+            item = dict(ent._asdict().items())
+            item = convert_enum_names(item)
             if any(item.get(fldname) for fldname in value_fields):
                 self.dao.insert(tablename, item)
 

@@ -138,7 +138,9 @@ def make_entities(
     aln_data: ty.Any = pn.align(nt_seq, pname, genes)
     aln_entities: AlignmentEntities = {"Alignment": [], "Substitution": []}
     for gene in genes:
-        reports: ty.Any = aln_data[gene]
+        # Nucamino returns results indexed by gene uppercase.
+        # Yes, this is brittle. No, it's not worth "fixing".
+        reports: ty.Any = aln_data[gene.upper()]
         assert len(reports) == 1
         aln_report = reports[0]["Report"]
         if aln_report is None:

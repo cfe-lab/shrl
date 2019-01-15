@@ -11,7 +11,7 @@ tests_require = [
 install_requires = [
     "biopython >=1.14.0, <2.0",
     "pynucamino >=0.1.0, <1.0",
-    "shared-schema",
+    "shared-schema >= 0.2",
     "SQLAlchemy >=1.1.14, <2.0",
     "tabulate >= 0.8",
 ]

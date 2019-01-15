@@ -50,16 +50,16 @@ class TestRegimenInitialization(unittest.TestCase):
         self.dao.command(reg_expr)
         reg_incl_expr = self.dao.regimendruginclusion.insert().values(
             regimen_id=reg_id,
-            medication_id="BOC",
+            medication_id="boc",
             dose=100,
-            frequency="QD",
+            frequency="qd",
             duration=7,
         )
         self.dao.command(reg_incl_expr)
 
         registry = util.RegimenRegistry.init_from_dao(self.dao)
 
-        regimen_src = "100mg BOC QD 1 week"
+        regimen_src = "100mg boc qd 1 week"
         regimen_data = ss_reg.cannonical.from_string(regimen_src)
         self.assertEqual(reg_id, registry.get_or_create_id(regimen_data))
 
@@ -73,7 +73,7 @@ class TestRegmimenRegistrySyncing(unittest.TestCase):
         self.dao.init_db()
 
     def test_basic_sync(self):
-        reg_src = "250mg SOF QD 6 weeks"
+        reg_src = "250mg sof qd 6 weeks"
         regimen = ss_reg.cannonical.from_string(reg_src)
         reg_id = self.registry.get_or_create_id(regimen)
 
@@ -92,9 +92,9 @@ class TestRegmimenRegistrySyncing(unittest.TestCase):
         row = next(iter(rows))
         cases = [
             (row.id, reg_id),
-            (row.medication_id, "SOF"),
+            (row.medication_id, "sof"),
             (row.dose, 250),
-            (row.frequency, "QD"),
+            (row.frequency, "qd"),
             (row.duration, 42),
         ]
         for got, expected in cases:

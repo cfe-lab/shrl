@@ -16,16 +16,11 @@ class TransformationException(exceptions.ShrlException):
     pass
 
 
-def _get_enum_name(
-    e_member: ty.Optional[field.FieldType], upcase: bool = False
-) -> ty.Optional[str]:
+def _get_enum_name(e_member: ty.Optional[field.FieldType]) -> ty.Optional[str]:
     if e_member is None:
         return None
     assert isinstance(e_member, enum.Enum)
-    if upcase:
-        return str(e_member.name).upper()
-    else:
-        return str(e_member.name)
+    return str(e_member.name).lower()
 
 
 def make_case(
@@ -132,7 +127,7 @@ def make_clinical_data(
     def parse_one(src: case.Clinical) -> ty.Optional[entities.ClinicalData]:
         kwargs = {fld: src.values[fld] for fld in flds}
         kwargs["kind"] = _get_enum_name(kwargs.get("kind"))
-        kwargs["il28b"] = _get_enum_name(kwargs.get("il28b"), upcase=True)
+        kwargs["il28b"] = _get_enum_name(kwargs.get("il28b"))
         if all(v is None for v in kwargs.values()):
             return None  # Skip empty records
         return entities.ClinicalData(
@@ -169,7 +164,7 @@ def make_treatment_data(
             regimen_id=get_reg_id("regimen"),
             prev_regimen_id=get_reg_id("prev_regimen"),
             pprev_regimen_id=get_reg_id("pprev_regimen"),
-            response=_get_enum_name(cln.values.get("response"), upcase=True),
+            response=_get_enum_name(cln.values.get("response")),
             notes=cln.values.get("treatment_notes"),
         )
 
@@ -205,7 +200,7 @@ def make_isolate_entities(
             raw_seq: seqrecord.SeqRecord = seq_registry.get(seq_id)
             sub_gt_src = seq.get("subegnotype", None)
             sub_gt = str(sub_gt_src) if sub_gt_src is not None else None
-            gene_str = _get_enum_name(seq["gene"], upcase=True)
+            gene_str = _get_enum_name(seq["gene"])
             msg = f"Missing gene label for case:\n{c}"
             assert gene_str is not None, msg
             genotype_str = _get_enum_name(seq["genotype"])
