@@ -1,4 +1,0 @@
-black
-mypy >= 0.620
-pylint >= 1.9.2
-rope >= 0.10.7
